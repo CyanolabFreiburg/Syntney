@@ -22,7 +22,6 @@ from ete3 import *
 # r_script_path:            path to the synteny clustering R script
 # synteny_window:           up and downstream number of bp of sequence that is searched for protein coding sequences
 def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_script_path, synteny_window=str(5000)):
-    print("pla")
     seqdict = dict()
     network_ids = dict()
     for seq_record in SeqIO.parse(network_file, "fasta"):
@@ -831,7 +830,7 @@ def main():
                         type=str, default=None)
     parser.add_argument("-c", "--cluster_script", help="path to synteny clustering R script",
                         type=str,
-                        default="/home/steffen/projects/Dominik_Master_Thesis/Synteny_Network/packages/Rscript/Synteny_Cluster_Script_sqlite.r")
+                        default="./packages/Rscript/Synteny_Cluster_Script_sqlite.r")
     parser.add_argument("-p", "--w_dir", help="working directory where temporary files are stored default is the "
                                               "current directory", type=str, default="")
     parser.add_argument("-n", "--network", help="if set to svg, 'outfile'_Network.svg is produced as an output."
