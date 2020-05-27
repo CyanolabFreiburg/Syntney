@@ -77,7 +77,7 @@ Sequence Input:
 			
 Example:
 
-	python SyntenyNetwork2.py -i sRNA.fasta -t candidates.fasta  -o synteny
+	python SyntenyNetwork2.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
 	
 	will run the script and add synteny value (SV) for sequences in 
 	candidates.fasta and in sRNA.fasta
