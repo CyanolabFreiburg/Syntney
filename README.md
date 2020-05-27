@@ -28,13 +28,17 @@ of sequence headers in the output FASTA files
 		network match sequences are written into outpath + _questionable.fasta
 		with the synteny value of each sequence added to the header. Header of 
 		each input sequence needs to have following form:
-			"NCBI ACC number":"#-starting nucleotide"-"#-end nucleotide"			
+			"NCBI ACC number":"#-starting nucleotide"-"#-end nucleotide"
+-d --sqlite_db
+                File-Path to SQLite database
+-s --sqlite_script
+		File Path to SQLite script
 -o --outfiles
 		path and name where all outfiles are getting stored. Folder is NOT 
 		created if it is not present			
 -c --cluster_script
 		path to the R synteny extraction script			
--d --w_dir
+-p --w_dir
 		path where temporary files are stored. default is the current directory
 		Folder is not created if it is not present	
 -n --network
@@ -54,10 +58,16 @@ of sequence headers in the output FASTA files
 		runtime dramatically. default 5000
 		- will be removed in further version and replaced by the number of -
 		- 		up and downstream proteins that is extracted	-		
--- node_normalization
+--node_normalization
 		uses a teleport from the sRNA node that depends on a normalized number 
 		of occurrences of the clusters instead of a random teleport if set to True. 
 		Default is False
+--protein_number 
+                If True uses a teleport at the sRNA based on a normalized number of cluster occurrences. 
+                Default is False
+--use_sob_weights 
+                If True uses sum of branch weights for Synteny Value calculation.
+                Default is False
 ```
 	
 **Example:**
