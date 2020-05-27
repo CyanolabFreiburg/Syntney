@@ -6,7 +6,7 @@
         |__/                             |__/                                                 
 ################################################################################################
 
-The SYNTENY NETWORK tool is a program to score the synteny of candidate 
+The SYNTNEY tool is a program to score the synteny of candidate 
 sequences in relation to a list of known homologous sequences. Therefore, 
 evolutionary related candidate sequences will get a high synteny score, whilst
 sequences with no homologous gene neighborhood will get a low score.
@@ -17,7 +17,7 @@ sequences e.g. from a BLAST search can be scored.  To score sequences the header
 in the input FASTA file needs to start with the NCBI accession number followed by 
 a : and the starting position of the hit in the genome. 
 
-SYNTENY NETWORK uses the PageRank algorithm combined with a modified version of the
+SYNTNEY uses the PageRank algorithm combined with a modified version of the
 Bellman-Ford algorithm to calculate synteny values. These Values are added to the end 
 of sequence headers in the output FASTA files
 
@@ -77,7 +77,7 @@ Sequence Input:
 			
 Example:
 
-	python SyntenyNetwork2.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
+	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
 	
 	will run the script and add synteny value (SV) for sequences in 
 	candidates.fasta and in sRNA.fasta
@@ -85,7 +85,7 @@ Example:
 		synteny_network.fasta 		(sRNA.fasta with SV in header)
 		synteny_questionable.fasta 	(candidates.fasta with SV in header) 
 		
-	python SyntenyNetwork2.py -i sRNA.fasta -t candidates.fasta  -o synteny -n svg
+	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
 	
 	will additionally produce a svg image of the network in the current folder
 	named:
