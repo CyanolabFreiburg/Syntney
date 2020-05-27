@@ -23,8 +23,8 @@ of sequence headers in the output FASTA files
 
 
 
-Sequence Input:
-
+**Sequence Input:**
+```text
 -i --network_file
 		fasta file containing sequences used for network construction
 		sequences are written into outpath + _network.fasta with the
@@ -74,19 +74,20 @@ Sequence Input:
 		uses a teleport from the sRNA node that depends on a normalized number 
 		of occurrences of the clusters instead of a random teleport if set to True. 
 		Default is False
+```
 			
-Example:
-
+**Example:**
+```text
 	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
-	
+```	
 	will run the script and add synteny value (SV) for sequences in 
 	candidates.fasta and in sRNA.fasta
 	The output will be written into the current directory and named:
 		synteny_network.fasta 		(sRNA.fasta with SV in header)
 		synteny_questionable.fasta 	(candidates.fasta with SV in header) 
-		
+```text		
 	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
-	
+```	
 	will additionally produce a svg image of the network in the current folder
 	named:
 		synteny_network.svg
