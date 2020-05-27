@@ -1,9 +1,9 @@
 ################################################################################################
-  ___                 _                           _  _         _                          _   
- / __|  _  _   _ _   | |_   ___   _ _    _  _    | \| |  ___  | |_  __ __ __  ___   _ _  | |__
- \__ \ | || | | ' \  |  _| / -_) | ' \  | || |   | .` | / -_) |  _| \ V  V / / _ \ | '_| | / /
- |___/  \_, | |_||_|  \__| \___| |_||_|  \_, |   |_|\_| \___|  \__|  \_/\_/  \___/ |_|   |_\_\
-        |__/                             |__/                                                 
+#  ___                 _                           _  _         _                          _   
+# / __|  _  _   _ _   | |_   ___   _ _    _  _    | \| |  ___  | |_  __ __ __  ___   _ _  | |__
+# \__ \ | || | | ' \  |  _| / -_) | ' \  | || |   | .` | / -_) |  _| \ V  V / / _ \ | '_| | / /
+# |___/  \_, | |_||_|  \__| \___| |_||_|  \_, |   |_|\_| \___|  \__|  \_/\_/  \___/ |_|   |_\_\
+#        |__/                             |__/                                                 
 ################################################################################################
 
 The SYNTNEY tool is a program to score the synteny of candidate 
@@ -80,14 +80,17 @@ of sequence headers in the output FASTA files
 ```text
 	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
 ```	
+
 	will run the script and add synteny value (SV) for sequences in 
 	candidates.fasta and in sRNA.fasta
 	The output will be written into the current directory and named:
 		synteny_network.fasta 		(sRNA.fasta with SV in header)
 		synteny_questionable.fasta 	(candidates.fasta with SV in header) 
+		
 ```text		
 	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
 ```	
+
 	will additionally produce a svg image of the network in the current folder
 	named:
 		synteny_network.svg
