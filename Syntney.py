@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import subprocess
 from ete3 import *
+import shutil
 
 # produces synteny file and cluster file with an R script. Therefore uses the input network fasta file and test fasta
 # file. Synteny window is used for the extraction window and is per default set to 5000
@@ -850,7 +851,16 @@ def main():
     parser.add_argument("-s", "--sqlite_script", help="", type=str, default="./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
     args = parser.parse_args()
 
-    wdir = args.w_dir
+    # check if TMP folder exists
+    wdir = str(os.path.abspath(args.w_dir)) + "/TMP/"
+    if os.path.isdir(wdir):
+        shutil.rmtree(wdir)
+
+    # setup TMP folder
+    wdir = os.path.abspath(args.w_dir)
+    os.mkdir("TMP")
+    wdir = str(wdir) + "/TMP/"
+    
     r_script_cluster_table, r_script_synteny_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
                                                                                   wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
                                                                                   synteny_window=
@@ -861,11 +871,14 @@ def main():
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
     network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
+    
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
+    
     best_paths = get_distances(network, sob_weights=args.use_sob_weights)
     network = pagerank(network, teleport=args.node_normalization)
     network_synteny_table = calculate_synteny_value(network_synteny_table, best_paths, network)
+    
     if test_ids is not None:
         test_synteny_table = get_synteny_dict(test_ids, r_script_synteny_table)
         test_synteny_table = add_cluster_to_synteny_table(test_synteny_table, cluster_dict, number_of_clusters)
@@ -886,7 +899,9 @@ def main():
         output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "network_cluster.txt")
     else:
         pass
-
+    
+    # delete TMP folder
+    shutil.rmtree(wdir)
 
 if __name__ == "__main__":
     main()
