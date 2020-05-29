@@ -856,10 +856,13 @@ def main():
     if os.path.isdir(wdir):
         shutil.rmtree(wdir)
 
+    # check if psi_out folder exists
+    path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
+    if os.path.isdir(path_psi_out):
+        shutil.rmtree(path_psi_out)
+
     # setup TMP folder
-    wdir = os.path.abspath(args.w_dir)
     os.mkdir("TMP")
-    wdir = str(wdir) + "/TMP/"
     
     r_script_cluster_table, r_script_synteny_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
                                                                                   wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
@@ -902,6 +905,10 @@ def main():
     
     # delete TMP folder
     shutil.rmtree(wdir)
+
+    # delete psi_out
+    path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
+    shutil.rmtree(path_psi_out)
 
 if __name__ == "__main__":
     main()
