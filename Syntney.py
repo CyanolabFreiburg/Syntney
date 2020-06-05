@@ -849,6 +849,7 @@ def main():
                                                   "Default is False", type=bool, default=False)
     parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str, default="../Syntney_DB/mySQLiteDB_new.db")
     parser.add_argument("-s", "--sqlite_script", help="", type=str, default="./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
+    parser.add_argument("-r", "--page_rank", help="Turn PageRank algorithm on or off; default=on", type=str, default="on")
     args = parser.parse_args()
 
     # check if TMP folder exists
@@ -879,7 +880,10 @@ def main():
         normalize_nodes(tree, tree_iddict, network)
     
     best_paths = get_distances(network, sob_weights=args.use_sob_weights)
-    network = pagerank(network, teleport=args.node_normalization)
+
+    if args.page_rank == "on":
+        network = pagerank(network, teleport=args.node_normalization)
+    
     network_synteny_table = calculate_synteny_value(network_synteny_table, best_paths, network)
     
     if test_ids is not None:
