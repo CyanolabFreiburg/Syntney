@@ -10,12 +10,12 @@ require(stringi)
 
 
 filename<-"candidates.fasta" # result fasta file from GLASSgo
-script_path<-"~/media/cyano_share/data/TOOLS/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
-db_path<-"~/media/jens@margarita/jensSicherung/GLASSgo2/mySQLiteDB_new2.db"
+script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
+db_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 
 
 synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
-random_extension=F # make locus_tags unique by adding random extensions
+random_extension=T # make locus_tags unique by adding random extensions
 
 args <- commandArgs(trailingOnly = TRUE) 
 
@@ -28,7 +28,6 @@ for(i in 1:length(args)){
  }
  
 synteny_window<-as.numeric(synteny_window)
-
 
 
 
@@ -178,10 +177,11 @@ write.table(coor3,file="coordinates.txt", sep="\t", row.names=F, col.names=F, qu
 
 command<-paste("python3 ", script_path, " -s ", db_path, " -a coordinates.txt")
 
-print(command)
+#print(command)
 dat<-do.call(rbind,strsplit(system(command, intern=T),"\t")) 
 
-print(dat)
+
+#print(dat)
 unlink("coordinates.txt")
 na<-which(dat[,3]=="no annotation")
 na2<-which(dat[,3]=="missing entry in LUT")
