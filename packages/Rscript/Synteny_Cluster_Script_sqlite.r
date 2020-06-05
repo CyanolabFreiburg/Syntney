@@ -9,9 +9,9 @@ require(stringi)
 #R --slave -f  GLASSgo_postprocessing_11_sqlite.r --args filename=candidates.fasta synteny_window=3000 script_path=~/media/cyano_share/data/TOOLS/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/media/jens@margarita/jensSicherung/GLASSgo2/mySQLiteDB_new.db"
 
 
-filename<-"candidates.fasta" # result fasta file from GLASSgo
+filename<-"RyhB.fa" # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
-db_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
+db_path<-"~~/Syntney/packages/testfiles/new.db"
 
 
 synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
@@ -67,9 +67,13 @@ split_glassgo<-function(x){
 export_ncRNA_coordinates<-function(x){ 
 	header_row <- grep(">", x)
 	headers <- as.character(x[header_row])
-	headers<-headers[2:length(headers)]
+	first_line<-grep(":",headers[1])
 	seqs<-as.character(x[header_row+1])
-	seqs<-seqs[2:length(seqs)]
+	if(length(first_line)==0){
+		headers<-headers[2:length(headers)]
+		seqs<-seqs[2:length(seqs)]
+	}
+	
 	tmp<-do.call(rbind,lapply(headers,split_glassgo))
 	tmp<-cbind(tmp,headers,seqs)
 	colnames(tmp)<-c("Accesion_number", "Strand","start","end","name","Full_header","sequence")
