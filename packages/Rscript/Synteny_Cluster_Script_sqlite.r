@@ -6,16 +6,18 @@ require(stringi)
 
 
 #CALL:
-#R --slave -f  GLASSgo_postprocessing_11_sqlite.r --args filename=candidates.fasta synteny_window=3000 script_path=~/media/cyano_share/data/TOOLS/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/media/jens@margarita/jensSicherung/GLASSgo2/mySQLiteDB_new.db"
+#R --slave -f  GLASSgo_postprocessing_11_sqlite.r --args threads=10 filename=candidates.fasta synteny_window=3000 script_path=~/media/cyano_share/data/TOOLS/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/media/jens@margarita/jensSicherung/GLASSgo2/mySQLiteDB_new.db"
 
 
-filename<-"RyhB.fa" # result fasta file from GLASSgo
+filename<-"Spot42.fa" # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
-db_path<-"~~/Syntney/packages/testfiles/new.db"
+db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
+threads<-30
+name<-"sRNA"
 
 
 synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
-random_extension=T # make locus_tags unique by adding random extensions
+#random_extension=T # make locus_tags unique by adding random extensions
 
 args <- commandArgs(trailingOnly = TRUE) 
 
@@ -28,7 +30,7 @@ for(i in 1:length(args)){
  }
  
 synteny_window<-as.numeric(synteny_window)
-
+threads<-as.numeric(threads)
 
 
 split_glassgo<-function(x){
@@ -122,7 +124,7 @@ get_prot_fasta3<-function(out){
 
 
 # identify homologous proteins using CDhit
-cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T){
+cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, threads=2){
   wd<-getwd()
   di<-paste(wd,"/", "psi_out",sep="")
   dir.create(di)
@@ -130,7 +132,7 @@ cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T){
     inp<-paste("./psi-cd-hit.pl -i ", fasta,  " -d 50 -o ", di,"/",outname, " -c ", thres, sep="")
   }
   if(psi==F){
-    inp<-paste("cd-hit -i ", fasta,  " -d 50 -o ", di,"/",outname, " -c ",  thres ," -n 2", " -aL 0.6", sep="")
+    inp<-paste("cd-hit -i ", fasta,  " -d 50 -o ", di,"/",outname, " -c ",  thres ," -n 2", " -aL 0.6", " -T ", threads, sep="")
   }
   print(inp)
   system(inp)
@@ -236,24 +238,41 @@ for(i in 1:length(ids)){
 
 tagtable<-locus_tag2org(out)
 get_prot_fasta3(out)
-cd<-cdhit_run(psi=F,thres=0.4)
+cd<-cdhit_run(psi=F,thres=0.4, threads=threads)
 cd<-proc_cdhit(cd)
 
 
 
 unlink("protein_fasta.txt")
- cluster_table<-function(cd){
+ cluster_table<-function(cd,dat){
 	out<-c()
+	anno<-matrix(,length(cd),2)
+	colnames(anno)<-c("node","name")
 	for( i in 1:length(cd)){
 		temp<-paste(cd[[i]], collapse=",")
 		out<-c(out,temp)
+		tmp<-na.omit(match(cd[[i]], dat[,4]))
+		tmp<-dat[tmp,3]
+		na<-which(tmp=="na")
+		if(length(na)>0){
+			tmp<-tmp[-na]			
+		}
+		if(length(tmp)>0){
+			tmp<-table(tmp)
+			tmp<-names(tmp)[which(tmp==max(tmp))[1]]
+		} else {
+			tmp<-cd[[i]][1]
+		}
+		anno[i,1]<-paste("cluster_",i,sep="")
+		anno[i,2]<-tmp
 	}
 	names(out)<-paste("cluster_",1:length(out),sep="")
-	out
+	out<-list(out,anno)
 }
 
-cluster<-cluster_table(cd)
-write.table(cluster, file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
+cluster<-cluster_table(cd,dat)
+write.table(cluster[[1]], file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
+write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
  
 synt_table<-function(out3, coor){
 	res<-matrix(,length(out3),6)
@@ -275,8 +294,6 @@ synt_table<-function(out3, coor){
  
 synteny<-synt_table(out,coor)
 write.table(synteny, file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)
-
-
 
 
 
