@@ -222,11 +222,11 @@ for(i in 1:length(ids)){
 	if(length(nan)>0){
 		temp_out[nan,"locus_tag"]<-unlist(lapply(length(nan),rand_extension,Accession=ids[i]))
 	}
-	if(random_extension==T){
-		if(length(rest)>0){
-			temp_out[rest,"locus_tag"]<-unlist(lapply(length(rest),rand_extension,Accession=temp_out[rest,"locus_tag"]))
-		}
-	}
+	# if(random_extension==T){
+		# if(length(rest)>0){
+			# temp_out[rest,"locus_tag"]<-unlist(lapply(length(rest),rand_extension,Accession=temp_out[rest,"locus_tag"]))
+		# }
+	# }
 	temp_out<-data.frame(temp_out,aa,bb,rep(s_srna,nrow(temp_out)),rep(e_srna,nrow(temp_out)),rep(stra,nrow(temp_out)),rep(coor[srna,5],nrow(temp_out)))
 
 	
