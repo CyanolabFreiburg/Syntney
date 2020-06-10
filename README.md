@@ -37,7 +37,9 @@ of sequence headers in the output FASTA files
 		path and name where all outfiles are getting stored. Folder is NOT 
 		created if it is not present			
 -c --cluster_script
-		path to the R synteny extraction script			
+		path to the R synteny extraction script	
+-r --page_rank
+		activate or deactivate PageRank (on/off); default=on 
 -p --w_dir
 		path where temporary files are stored. default is the current directory
 		Folder is not created if it is not present	
