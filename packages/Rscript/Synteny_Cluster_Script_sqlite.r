@@ -6,15 +6,15 @@ require(stringi)
 
 
 #CALL:
-#R --slave -f  GLASSgo_postprocessing_11_sqlite.r --args threads=10 filename=candidates.fasta synteny_window=3000 script_path=~/media/cyano_share/data/TOOLS/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/media/jens@margarita/jensSicherung/GLASSgo2/mySQLiteDB_new.db"
+#R --slave -f  ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=candidates.fasta synteny_window=3000 script_path=~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db
 
 
-filename<-"Spot42.fa" # result fasta file from GLASSgo
+filename<-"candidates.fasta" # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
 threads<-30
 name<-"sRNA"
-
+write_files<-FALSE
 
 synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
 #random_extension=T # make locus_tags unique by adding random extensions
@@ -31,7 +31,7 @@ for(i in 1:length(args)){
  
 synteny_window<-as.numeric(synteny_window)
 threads<-as.numeric(threads)
-
+write_files<-as.logical(write_files)
 
 split_glassgo<-function(x){
 	tmp<-strsplit(x[1], ">")[[1]]
@@ -105,7 +105,7 @@ rand_extension<-function(x, Accession){
 	temp
 }
 
-get_prot_fasta3<-function(out){
+get_prot_fasta3<-function(out, filen){
   fasta<-c()
   for(i in 1:length(out)){
     for(j in 1:nrow(out[[i]])){
@@ -119,28 +119,29 @@ get_prot_fasta3<-function(out){
         }
       }
     }
-  write.table(fasta, file="protein_fasta.txt", sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+  write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
 }
 
 
 # identify homologous proteins using CDhit
 cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, threads=2){
-  wd<-getwd()
-  di<-paste(wd,"/", "psi_out",sep="")
-  dir.create(di)
-  if(psi==T){
-    inp<-paste("./psi-cd-hit.pl -i ", fasta,  " -d 50 -o ", di,"/",outname, " -c ", thres, sep="")
-  }
-  if(psi==F){
-    inp<-paste("cd-hit -i ", fasta,  " -d 50 -o ", di,"/",outname, " -c ",  thres ," -n 2", " -aL 0.6", " -T ", threads, sep="")
-  }
-  print(inp)
-  system(inp)
-  cd<-paste(di, "/", outname, ".clstr", sep="")
-  cd<-read.delim(cd, header=F, sep="?")
-  cd<-as.character(cd[,1])
-  cd<-gsub("\t"," ", cd)
-  cd
+	tempf<-tempfile()
+	wd<-getwd()
+	di<-paste(wd,"/", "psi_out",sep="")
+	dir.create(di)
+	if(psi==T){
+		inp<-paste("./psi-cd-hit.pl -i ", fasta,  " -d 50 -o ", tempf, " -c ", thres, sep="")
+	 }
+	if(psi==F){
+		inp<-paste("cd-hit -i ", fasta,  " -d 50 -o ",tempf, " -c ",  thres ," -n 2", " -aL 0.6", " -T ", threads, sep="")
+	}
+	 # print(inp)
+	 system(inp)
+	 cd<-paste(tempf, ".clstr", sep="")
+	 cd<-readLines(cd)
+	 cd<-as.character(cd)
+	 cd<-gsub("\t"," ", cd)
+	 cd
 }
 
 proc_cdhit<-function(x){ 
@@ -235,22 +236,68 @@ for(i in 1:length(ids)){
 	out[[i]]<-temp_out
 	
 }
-
+filen<-tempfile()
 tagtable<-locus_tag2org(out)
-get_prot_fasta3(out)
-cd<-cdhit_run(psi=F,thres=0.4, threads=threads)
+get_prot_fasta3(out, filen)
+cd<-cdhit_run(fasta=filen, psi=F,thres=0.4, threads=threads)
 cd<-proc_cdhit(cd)
 
+synt_table<-function(out3, coor){
+	position<-c()
+	res<-matrix(,length(out3),6)
+	colnames(res)<-c("ID","organism","accesion","refseqID","neighbourhood_genes","position2sRNA")
+	for(i in 1:length(out3)){
+		tmp<-out3[[i]][order(out3[[i]][,"aa"]),]
+		tmp_pos<-matrix(,nrow(tmp),2)
+		tmp_pos[,2]<-"right"
+		if(tmp[1,"rep.stra..nrow.temp_out.."]=="-1"){
+			tmp_pos[,2]<-"left"
+		}
+		tmp_pos[,1]<-tmp[,"locus_tag"]
+		pos<-which(tmp[,"aa"]<tmp[,"rep.s_srna..nrow.temp_out.."])
+		if(tmp[1,"rep.stra..nrow.temp_out.."]=="-1"){
+			tmp_pos[pos,2]<-"right"
+		} else{
+			tmp_pos[pos,2]<-"left"
+		}
+		
+		genes<-tmp[,"locus_tag"]
+		
+		pos2<-seq(1,nrow(tmp)-length(pos))
+		pos<-c(rev(pos),pos2)
+		if(tmp[1,"rep.stra..nrow.temp_out.."]=="-1"){
+			pos<-rev(pos)
+			genes<-rev(genes)
+		}		
+		genes<-paste(gsub("\"","",genes),collapse=",")
+		res[i,1]<-names(out3)[i]
+		res[i,2]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),"name"]
+		res[i,3]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),1]
+		res[i,4]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),1]
+		res[i,5]<-genes
+		res[i,6]<-paste(pos,collapse=",")
+		position<-rbind(position,tmp_pos)
+	}
+	return(list(res,position))
+}
+ 
+synteny<-synt_table(out,coor)
 
-
-unlink("protein_fasta.txt")
- cluster_table<-function(cd,dat){
+ cluster_table<-function(cd,dat, synteny){
 	out<-c()
-	anno<-matrix(,length(cd),2)
-	colnames(anno)<-c("node","name")
+	anno<-matrix(,length(cd),3)
+	colnames(anno)<-c("node","cluster_name","position_relative_to_sRNA")
 	for( i in 1:length(cd)){
 		temp<-paste(cd[[i]], collapse=",")
 		out<-c(out,temp)
+		tmp_pos<-na.omit(match(cd[[i]],synteny[[2]][,1]))
+		if(length(tmp_pos)>0){
+			tmp_pos<-synteny[[2]][tmp_pos,2]
+			tmp_pos<-table(tmp_pos)
+			tmp_pos<-names(tmp_pos)[which(tmp_pos==max(tmp_pos))[1]]
+		} else {
+			tmp_pos<-""
+		}
 		tmp<-na.omit(match(cd[[i]], dat[,4]))
 		tmp<-dat[tmp,3]
 		na<-which(tmp=="na")
@@ -265,36 +312,24 @@ unlink("protein_fasta.txt")
 		}
 		anno[i,1]<-paste("cluster_",i,sep="")
 		anno[i,2]<-tmp
+		anno[i,3]<-tmp_pos
 	}
 	names(out)<-paste("cluster_",1:length(out),sep="")
 	out<-list(out,anno)
 }
 
-cluster<-cluster_table(cd,dat)
-write.table(cluster[[1]], file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
-write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
- 
-synt_table<-function(out3, coor){
-	res<-matrix(,length(out3),6)
-	colnames(res)<-c("ID","organism","accesion","refseqID","neighbourhood_genes","position2sRNA")
-	for(i in 1:length(out3)){
-		tmp<-out3[[i]][order(out3[[i]][,"aa"]),]
-		pos<-which(tmp[,"aa"]<tmp[,"rep.s_srna..nrow.temp_out.."])
-		pos2<-seq(1,nrow(tmp)-length(pos))
-		pos<-c(rev(pos),pos2)
-		res[i,1]<-names(out3)[i]
-		res[i,2]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),"name"]
-		res[i,3]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),1]
-		res[i,4]<-coor[match(gsub("_.*","",names(out3)[i]), coor[,1]),1]
-		res[i,5]<-paste(gsub("\"","",tmp[,"locus_tag"]),collapse=",")
-		res[i,6]<-paste(pos,collapse=",")
-	}
-	res
+cluster<-cluster_table(cd,dat, synteny)
+
+if(write_files==TRUE){
+	write.table(cluster[[1]], file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
+	write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
+	write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
+} else {
+	cat("#cluster_table\n")
+	write.table(cluster[[1]], file=stdout(), sep="\t", quote=F)
+	cat("#synteny_table\n")
+	write.table(synteny[[1]], file=stdout(), sep="\t", quote=F, row.names=F)	
+	cat("#network_annotation\n")
+	write.table(cluster[[2]], file=stdout(), sep="\t", quote=F,row.names = FALSE )
 }
- 
-synteny<-synt_table(out,coor)
-write.table(synteny, file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)
-
-
-
 
