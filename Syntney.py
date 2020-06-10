@@ -6,6 +6,7 @@ import argparse
 import subprocess
 from ete3 import *
 import shutil
+import sys
 
 # produces synteny file and cluster file with an R script. Therefore uses the input network fasta file and test fasta
 # file. Synteny window is used for the extraction window and is per default set to 5000
@@ -67,6 +68,7 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
     f.close()
     
     subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + wdir + "syntenyfile.fasta", "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path])
+    
     r_script_cluster_table = wdir + "syntenyfile_cluster_table.txt"
     r_script_synteny_table = wdir + "syntenyfile_synteny_table.txt"
     os.system("rm " + wdir + "syntenyfile.fasta")
@@ -865,12 +867,21 @@ def main():
     # setup TMP folder
     os.mkdir("TMP")
     
-    r_script_cluster_table, r_script_synteny_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
-                                                                                  wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
-                                                                                  synteny_window=
-                                                                                  str(args.synteny_window))
+    try:
+        r_script_cluster_table, r_script_synteny_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
+                                                                                              wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
+                                                                                              synteny_window=
+                                                                                              str(args.synteny_window))
+    except:
+        sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
+
     number_of_clusters = args.protein_number + 1  # needs to be done as sRNA is also considered as a cluster
-    network_synteny_table = get_synteny_dict(network_ids, r_script_synteny_table)
+    
+    try:
+        network_synteny_table = get_synteny_dict(network_ids, r_script_synteny_table)
+    except:
+        sys.exit("ERROR: Function  get_synteny_dict(network_ids, r_script_synteny_table)  failed!")
+    
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
