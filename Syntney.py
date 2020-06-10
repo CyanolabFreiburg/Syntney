@@ -908,7 +908,7 @@ def main():
         pass
     
     # delete TMP folder
-    shutil.rmtree(wdir)
+    #shutil.rmtree(wdir)
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
