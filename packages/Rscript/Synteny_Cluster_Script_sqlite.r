@@ -321,7 +321,7 @@ if(write_files==TRUE){
 	write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
 } else {
 	cat("#cluster_table\n")
-	write.table(cluster[[1]], file=stdout(), sep="\t", quote=F,row.names=F, col.names=F)
+	write.table(cluster[[1]], file=stdout(), sep="\t", quote=F,row.names=T, col.names=F)
 	cat("#synteny_table\n")
 	write.table(synteny[[1]], file=stdout(), sep="\t", quote=F, row.names=F)	
 	cat("#network_annotation\n")

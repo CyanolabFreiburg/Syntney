@@ -23,7 +23,7 @@ import sys
 # syntenyfile:              syntenyfile that was produced by R script
 # r_script_path:            path to the synteny clustering R script
 # synteny_window:           up and downstream number of bp of sequence that is searched for protein coding sequences
-def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_script_path, synteny_window=str(5000)):
+def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_script_path, num_threads, synteny_window=str(5000)):
     seqdict = dict()
     network_ids = dict()
     for seq_record in SeqIO.parse(network_file, "fasta"):
@@ -60,21 +60,54 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
                         seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
     else:
         test_ids = None
+    #TODO syntenyfile.fasta must be replaced by another method; otherwise multiple access will raise errors
     f = open(wdir + "syntenyfile.fasta", "w")
-    f.write(">pseudoquery\nGTA\n")
     for element in seqdict:
         desc, seq = seqdict[element]
         f.write(">" + desc + "\n" + str(seq) + "\n")
     f.close()
     
-    subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + wdir + "syntenyfile.fasta", "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path])
+    proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + wdir + "syntenyfile.fasta", "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
     
-    r_script_cluster_table = wdir + "syntenyfile_cluster_table.txt"
-    r_script_synteny_table = wdir + "syntenyfile_synteny_table.txt"
+    master_table = proc.stdout.split("\n")
+    # sort master table into subtables - syntenyfile_cluster_table - syntenyfile_synteny_table - network_annotation_table
+    syntenyfile_cluster_table = list()
+    syntenyfile_synteny_table = list()
+    network_annotation_table = list()
+    missing_ids_table = list()
+
+    list_name = ""
+    for i in range(0, len(master_table)):
+        print(master_table[i])
+        if master_table[i].startswith("#"):
+            list_name = "-"
+
+        if list_name == "#cluster_table":
+            syntenyfile_cluster_table.append(master_table[i])
+        if list_name == "#synteny_table":
+            syntenyfile_synteny_table.append(master_table[i])
+        if list_name == "#network_annotation":
+            network_annotation_table.append(master_table[i])
+        if list_name == "#missing_data":
+            missing_ids_table.append(master_table[i])
+
+        if master_table[i].startswith("#cluster_table"):
+            list_name = "#cluster_table"
+        if master_table[i].startswith("#synteny_table"):
+            list_name = "#synteny_table"
+        if master_table[i].startswith("#network_annotation"):
+            list_name = "#network_annotation"
+        if master_table[i].startswith("#missing_data"):
+            list_name = "#missing_data"
+
+    #r_script_cluster_table = wdir + "syntenyfile_cluster_table.txt"
+    #r_script_synteny_table = wdir + "syntenyfile_synteny_table.txt"
+
+    #TODO remove next line
     os.system("rm " + wdir + "syntenyfile.fasta")
 
-    return r_script_cluster_table, r_script_synteny_table, network_ids, test_ids
-
+    #return r_script_cluster_table, r_script_synteny_table, network_ids, test_ids
+    return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, network_ids, test_ids
 
 # produces a dictionary from the identifiers of sRNAs (ids). Identifiers must be like "Accessionnumber" + underscore +
 # "starting position of hit" (e.g. CP001291.1_4248628). The synteny dictionary (synteny_dict) contains sRNA surrounding
@@ -92,37 +125,67 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
 # infile specifies a synteny_table file from the synteny clustering R script.
 def get_synteny_dict(ids, r_script_synteny_table):
     synteny_dict = dict()
-    with open(r_script_synteny_table) as f:
-        next(f)
-        for line in f:
-            line = line.rstrip()
-            handle = line.split("\t")
-            seq_id = handle[0]
-            if seq_id not in synteny_dict:
-                if seq_id in ids:   # checks whether the id from master table should be added to the synteny_dict
-                    synteny_dict.update({seq_id: []})
-                    proteins = handle[4].split(",") # all surrounding proteins
-                    positions = handle[5].split(",")  # positions of all surrounding proteins positions[x] is position of proteins[x]
-                    downstream_dict = {}    # dict of proteins downstream the sRNA ({protein: position, ... })
-                    upstream_dict = {}      # proteins upstream the sRNA
-                    switch = 0              # needed to switch at position 1 from upstream to downstream
-                    for x in range(len(proteins)): # adds proteins to down and upstream dict
-                        if int(positions[x]) < 10:
-                            if switch == 0:
-                                if positions[x] == "1":
-                                    switch = 1
-                            if switch == 2:
-                                downstream_dict.update({proteins[x]: positions[x]})
-
-                            if switch < 2:
-
-                                upstream_dict.update({proteins[x]: positions[x]})
-                                if switch == 1:
-                                    switch = 2
-                    synteny_dict[seq_id].append(upstream_dict)
-                    synteny_dict[seq_id].append(downstream_dict)
-
+    for line in r_script_synteny_table:
+        handle = line.split("\t")
+        seq_id = handle[0]
+        if seq_id not in synteny_dict:
+            if seq_id in ids:   # checks whether the id from master table should be added to the synteny_dict
+                synteny_dict.update({seq_id: []})
+                proteins = handle[4].split(",") # all surrounding proteins
+                positions = handle[5].split(",")  # positions of all surrounding proteins positions[x] is position of proteins[x]
+                downstream_dict = {}    # dict of proteins downstream the sRNA ({protein: position, ... })
+                upstream_dict = {}      # proteins upstream the sRNA
+                switch = 0              # needed to switch at position 1 from upstream to downstream
+                for x in range(len(proteins)): # adds proteins to down and upstream dict
+                    if int(positions[x]) < 10:
+                        if switch == 0:
+                            if positions[x] == "1":
+                                switch = 1
+                        if switch == 2:
+                            downstream_dict.update({proteins[x]: positions[x]})
+                        if switch < 2:
+                            upstream_dict.update({proteins[x]: positions[x]})
+                            if switch == 1:
+                                switch = 2
+                synteny_dict[seq_id].append(upstream_dict)
+                synteny_dict[seq_id].append(downstream_dict)
     return synteny_dict
+
+
+
+#def get_synteny_dict(ids, r_script_synteny_table):
+#    synteny_dict = dict()
+#    with open(r_script_synteny_table) as f:
+#        next(f)
+#        for line in f:
+#            line = line.rstrip()
+#            handle = line.split("\t")
+#            seq_id = handle[0]
+#            if seq_id not in synteny_dict:
+#                if seq_id in ids:   # checks whether the id from master table should be added to the synteny_dict
+#                    synteny_dict.update({seq_id: []})
+#                    proteins = handle[4].split(",") # all surrounding proteins
+#                    positions = handle[5].split(",")  # positions of all surrounding proteins positions[x] is position of proteins[x]
+#                    downstream_dict = {}    # dict of proteins downstream the sRNA ({protein: position, ... })
+#                    upstream_dict = {}      # proteins upstream the sRNA
+#                    switch = 0              # needed to switch at position 1 from upstream to downstream
+#                    for x in range(len(proteins)): # adds proteins to down and upstream dict
+#                        if int(positions[x]) < 10:
+#                            if switch == 0:
+#                                if positions[x] == "1":
+#                                    switch = 1
+#                            if switch == 2:
+#                                downstream_dict.update({proteins[x]: positions[x]})
+#
+#                            if switch < 2:
+#
+#                                upstream_dict.update({proteins[x]: positions[x]})
+#                                if switch == 1:
+#                                    switch = 2
+#                    synteny_dict[seq_id].append(upstream_dict)
+#                    synteny_dict[seq_id].append(downstream_dict)
+#
+#    return synteny_dict
 
 
 # Returns a cluster_dict where proteins from the synteny_table point on their clusters.
@@ -130,18 +193,30 @@ def get_synteny_dict(ids, r_script_synteny_table):
 #  Protein2: Cluster_2}
 # The infile is the cluster_table produced by the synteny R script.
 def get_clusters(r_script_cluster_table):
-    f = open(r_script_cluster_table)
     cluster_dict = dict()
-    for line in f:
-        line = line.rstrip()
+    for line in r_script_cluster_table:
+        print(line)
         if line.startswith("cluster"):
             handle = line.split("\t")
             name = handle[0]
             cluster = handle[1].split(",")
             for element in cluster:
                 cluster_dict.update({element: name})
-
     return cluster_dict
+
+#def get_clusters(r_script_cluster_table):
+#    f = open(r_script_cluster_table)
+#    cluster_dict = dict()
+#    for line in f:
+#        line = line.rstrip()
+#        if line.startswith("cluster"):
+#            handle = line.split("\t")
+#            name = handle[0]
+#            cluster = handle[1].split(",")
+#            for element in cluster:
+#                cluster_dict.update({element: name})
+#
+#    return cluster_dict
 
 
 # Uses a synteny_dict and a cluster_dict to APPEND clusters matching the proteins of entries in a synteny_dict.
@@ -824,6 +899,11 @@ def write_outfile_from_synteny_table(synteny_table, iddict, outfile):
     f.close()
 
 
+def write_outfile_from_missing_ids_table(missing_ids_table, outfile):
+    f = open(outfile, "w")
+    for entry in missing_ids_table:
+        f.write(str(entry) + "\n")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -852,6 +932,7 @@ def main():
     parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str, default="../Syntney_DB/mySQLiteDB_new.db")
     parser.add_argument("-s", "--sqlite_script", help="", type=str, default="./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
     parser.add_argument("-r", "--page_rank", help="Turn PageRank algorithm on or off; default=on", type=str, default="on")
+    parser.add_argument("-x", "--num_threads", help="Number of threads; default=1", type=int, default=1)
     args = parser.parse_args()
 
     # check if TMP folder exists
@@ -868,23 +949,70 @@ def main():
     os.mkdir("TMP")
     
     try:
-        r_script_cluster_table, r_script_synteny_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
-                                                                                              wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
-                                                                                              synteny_window=
-                                                                                              str(args.synteny_window))
+        r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
+                                                                                                            wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
+                                                                                                            args.num_threads, synteny_window=
+                                                                                                            str(args.synteny_window))
+        
+        
+        #print("r_script_cluster_table")
+        #print(r_script_cluster_table)
+        #print("r_script_synteny_table")
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        print(r_script_synteny_table)
+        for line in r_script_synteny_table:
+            print(line)
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        #print("r_network_annotation_table")
+        #print(r_network_annotation_table)
+        #print("Missing IDS")
+        #print(r_missing_ids_table)
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
 
+
     number_of_clusters = args.protein_number + 1  # needs to be done as sRNA is also considered as a cluster
-    
+        
     try:
+        ### FOR TESTING
+        print(network_ids)
+        for line in network_ids:
+            print(line)
+        print("===========================================")
+        print(r_script_synteny_table)
+        for line in r_script_synteny_table:
+            print(line)
+        ### END
+
         network_synteny_table = get_synteny_dict(network_ids, r_script_synteny_table)
+        print("+++++++++++++++++++++++++++++++++++++++++++++")
+        print(network_synteny_table)
+        for line in network_synteny_table:
+            print(line)
+        print("+++++++++++++++++++++++++++++++++++++++++++++")
     except:
         sys.exit("ERROR: Function  get_synteny_dict(network_ids, r_script_synteny_table)  failed!")
     
     cluster_dict = get_clusters(r_script_cluster_table)
+    #print("cluster_dic")
+    #print(cluster_dict)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
+    
+    #### FOR TESTING
+    print(network_synteny_table)
+    for line in network_synteny_table:
+        print(line)
+
+    tmp_fresh_build_network = dict()
+    for cluster in network:
+        for connected_cluster in network[cluster][1]:
+            tmp_fresh_build_network[str(cluster)] = 0
+            tmp_fresh_build_network[str(connected_cluster)] = 0
+    print("#tmp_fresh_build_network => " + str(len(tmp_fresh_build_network)))
+    ### END
+
+    
     network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
     
     if args.node_normalization is True:
@@ -905,6 +1033,7 @@ def main():
         test_synteny_table = None
     normalize_synteny_value(network_synteny_table, test_synteny_table)
     write_outfile_from_synteny_table(network_synteny_table, network_ids, args.outfiles + "_network.fasta")
+    write_outfile_from_missing_ids_table(r_missing_ids_table, args.outfiles + "_missing_ids.txt")
     if test_synteny_table is not None:
         write_outfile_from_synteny_table(test_synteny_table, test_ids, args.outfiles + "_questionable.fasta")
     if args.network == "svg":
@@ -917,7 +1046,26 @@ def main():
         output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "network_cluster.txt")
     else:
         pass
-    
+
+    ##### ONLY FOR TESTING
+    tmp_cluster_hash = dict()
+    tmp_cl_name_hash = dict()
+    for line in r_script_cluster_table:
+        if line.startswith("cluster"):
+            tmp_arr = line.split("\t")
+            tmp_cluster_hash[str(tmp_arr[0])] = 0
+            tmp_cl_name_hash[str(tmp_arr[1])] = 0
+    print("#tmp_cluster_hash SIZE => " + str(len(tmp_cluster_hash)))
+    print("#tmp_cl_name_hash SIZE => " + str(len(tmp_cl_name_hash)))
+
+    tmp_network_hash = dict()
+    for cluster in network:
+        for connected_cluster in network[cluster][1]:
+            tmp_network_hash[str(cluster)] = 0
+            tmp_network_hash[str(connected_cluster)] = 0
+    print("#tmp_network_hash SIZE=> " + str(len(tmp_network_hash)))
+    ##### END TESTING
+
     # delete TMP folder
     #shutil.rmtree(wdir)
 
