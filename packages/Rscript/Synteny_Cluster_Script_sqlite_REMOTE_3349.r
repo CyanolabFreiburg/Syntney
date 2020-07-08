@@ -332,7 +332,3 @@ if(write_files==TRUE){
 }
 
 
-<<<<<<< HEAD
-cat(paste(x, collapse = "\n"), file = "df.csv") 
-=======
->>>>>>> 25b893179dba67ec002ea93abf1a8c8e105a2f54
