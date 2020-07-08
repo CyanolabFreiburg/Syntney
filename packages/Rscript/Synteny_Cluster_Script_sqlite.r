@@ -6,10 +6,10 @@ require(stringi)
 
 
 #CALL:
-#R --slave -f  ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=candidates.fasta synteny_window=3000 script_path=~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db
-#	python3 ~/Syntney/Syntney.py -i ~/Syntney/testfiles/candidates.fasta  -o ~/Syntney/testfiles/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#R --slave -f  ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta synteny_window=3000 script_path=~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db
+#	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
-filename<-"candidates.fasta" # result fasta file from GLASSgo
+filename<-"sRNA.fasta" # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
 threads<-30
@@ -321,7 +321,7 @@ if(write_files==TRUE){
 	write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
 } else {
 	cat("#cluster_table\n")
-	write.table(cluster[[1]], file=stdout(), sep="\t", quote=F,row.names=F, col.names=F)
+	write.table(cluster[[1]], file=stdout(), sep="\t", quote=F,row.names=T, col.names=F)
 	cat("#synteny_table\n")
 	write.table(synteny[[1]], file=stdout(), sep="\t", quote=F, row.names=F)	
 	cat("#network_annotation\n")
@@ -332,4 +332,3 @@ if(write_files==TRUE){
 }
 
 
-cat(paste(x, collapse = "\n"), file = "df.csv") 
