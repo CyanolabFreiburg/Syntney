@@ -7,7 +7,7 @@ require(stringi)
 
 #CALL:
 #R --slave -f  ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta synteny_window=3000 script_path=~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db
-#	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/Syntney/Syntney.py -i sRNA.fasta  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 filename<-"sRNA.fasta" # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
@@ -330,9 +330,3 @@ if(write_files==TRUE){
 	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	cat(paste(x, collapse = "\n"))
 }
-
-
-<<<<<<< HEAD
-cat(paste(x, collapse = "\n"), file = "df.csv") 
-=======
->>>>>>> 25b893179dba67ec002ea93abf1a8c8e105a2f54
