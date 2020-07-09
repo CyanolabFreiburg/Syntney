@@ -16,7 +16,7 @@ threads<-30
 name<-"sRNA"
 write_files<-F
 
-synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
+synteny_window<-5000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
 
 args <- commandArgs(trailingOnly = TRUE) 
 
@@ -118,6 +118,12 @@ get_prot_fasta3<-function(out, filen){
         }
       }
     }
+	header<-grep(">",fasta)
+	dup<-which(duplicated(fasta[header]))
+	if(length(dup)>0){
+		del<-c(header[dup],header[dup]+1)
+		fasta<-fasta[-del]
+	}
   write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
 }
 
@@ -330,3 +336,17 @@ if(write_files==TRUE){
 	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	cat(paste(x, collapse = "\n"))
 }
+
+
+
+
+
+
+
+tags<-(unlist(strsplit(synteny[[1]][,"neighbourhood_genes"],",")))
+
+
+
+clus_tags<-(unlist(strsplit(cluster[[1]],",")))
+
+
