@@ -78,7 +78,6 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
 
     list_name = ""
     for i in range(0, len(master_table)):
-        print(master_table[i])
         if master_table[i].startswith("#"):
             list_name = "-"
 
@@ -195,7 +194,6 @@ def get_synteny_dict(ids, r_script_synteny_table):
 def get_clusters(r_script_cluster_table):
     cluster_dict = dict()
     for line in r_script_cluster_table:
-        print(line)
         if line.startswith("cluster"):
             handle = line.split("\t")
             name = handle[0]
@@ -680,7 +678,6 @@ def pagerank(network, eps=1.0e-14, teleport=False):
 #                      [downstream_Cluster],
 #                       synteny_value]} "appends the synteny value here"
 def calculate_synteny_value(synteny_dict, best_paths, network):
-
     for entry in synteny_dict:
         uppath = synteny_dict[entry][2] # upstream cluster of a considered entry in the synteny dict
         count = 0
@@ -955,18 +952,6 @@ def main():
                                                                                                             str(args.synteny_window))
         
         
-        #print("r_script_cluster_table")
-        #print(r_script_cluster_table)
-        #print("r_script_synteny_table")
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-        print(r_script_synteny_table)
-        for line in r_script_synteny_table:
-            print(line)
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-        #print("r_network_annotation_table")
-        #print(r_network_annotation_table)
-        #print("Missing IDS")
-        #print(r_missing_ids_table)
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
 
@@ -974,45 +959,13 @@ def main():
     number_of_clusters = args.protein_number + 1  # needs to be done as sRNA is also considered as a cluster
         
     try:
-        ### FOR TESTING
-        print(network_ids)
-        for line in network_ids:
-            print(line)
-        print("===========================================")
-        print(r_script_synteny_table)
-        for line in r_script_synteny_table:
-            print(line)
-        ### END
-
         network_synteny_table = get_synteny_dict(network_ids, r_script_synteny_table)
-        print("+++++++++++++++++++++++++++++++++++++++++++++")
-        print(network_synteny_table)
-        for line in network_synteny_table:
-            print(line)
-        print("+++++++++++++++++++++++++++++++++++++++++++++")
     except:
         sys.exit("ERROR: Function  get_synteny_dict(network_ids, r_script_synteny_table)  failed!")
     
     cluster_dict = get_clusters(r_script_cluster_table)
-    #print("cluster_dic")
-    #print(cluster_dict)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    
-    #### FOR TESTING
-    print(network_synteny_table)
-    for line in network_synteny_table:
-        print(line)
-
-    tmp_fresh_build_network = dict()
-    for cluster in network:
-        for connected_cluster in network[cluster][1]:
-            tmp_fresh_build_network[str(cluster)] = 0
-            tmp_fresh_build_network[str(connected_cluster)] = 0
-    print("#tmp_fresh_build_network => " + str(len(tmp_fresh_build_network)))
-    ### END
-
-    
     network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
     
     if args.node_normalization is True:
@@ -1047,26 +1000,7 @@ def main():
     else:
         pass
 
-    ##### ONLY FOR TESTING
-    tmp_cluster_hash = dict()
-    tmp_cl_name_hash = dict()
-    for line in r_script_cluster_table:
-        if line.startswith("cluster"):
-            tmp_arr = line.split("\t")
-            tmp_cluster_hash[str(tmp_arr[0])] = 0
-            tmp_cl_name_hash[str(tmp_arr[1])] = 0
-    print("#tmp_cluster_hash SIZE => " + str(len(tmp_cluster_hash)))
-    print("#tmp_cl_name_hash SIZE => " + str(len(tmp_cl_name_hash)))
-
-    tmp_network_hash = dict()
-    for cluster in network:
-        for connected_cluster in network[cluster][1]:
-            tmp_network_hash[str(cluster)] = 0
-            tmp_network_hash[str(connected_cluster)] = 0
-    print("#tmp_network_hash SIZE=> " + str(len(tmp_network_hash)))
-    ##### END TESTING
-
-    # delete TMP folder
+    #delete TMP folder
     #shutil.rmtree(wdir)
 
     # delete psi_out
