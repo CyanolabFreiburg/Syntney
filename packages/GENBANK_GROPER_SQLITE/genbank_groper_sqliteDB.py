@@ -136,7 +136,7 @@ def execute_barrbap(organism, dna_file):
     # barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + cwd + \
                 #   "/" + barrnap_out
     os.system(barrnap_cmd)
-    print("\nbarrnap execution completed !!!")
+    # print("\nbarrnap execution completed !!!")
 
     return barrnap_out
 
@@ -438,7 +438,7 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag, ncbi_file_path):
                             consensus_seq = consensus_sequence(dim, sequences,
                                                             sequences_dict,
                                                             keys)
-                            print("sequence selected !!!!")
+                            # print("sequence selected !!!!")
                         elif dim == 2 or dim == 1:
                             # print("\ndetected 16sRNA are 2 or less !!!!\n")
                             consensus_seq = sequences[0]
@@ -705,15 +705,13 @@ def process_NCBI_lookup(in_file, directory, out_file):
     # os.remove(in_file)
 
 def find_refseq(ncbi_file_path, input_param):
-    # User starts a search - check if the ACC is in the database or not.
-    # If not, download the genbank from ncbi
+    """finds the refseq_id of an accession in master lookup table"""
     handle = open(ncbi_file_path, "r")
     refseq = ""
     for line in handle:
         line = line.rstrip()
         line_arr = line.split("\t")
         line_chr = re.split(',', line_arr[0])
-        # print()
         for i, val in enumerate(line_chr):
             if input_param in val:
                 # taking 1st id as chr_ref bcz all of them has same 16sRNA seq
@@ -730,13 +728,16 @@ def find_refseq(ncbi_file_path, input_param):
                     refseq = "NA"
     if refseq == "":
         refseq = "NA"
+    
     handle.close()
-    # print(refseq)
+  
+
     return refseq
 
 
-def seq_extraction(dseq):
+def seq_extraction(dseq, positions, complement):
     short_seq_all = dict()
+    dna_seq = ''
     for row in dseq:
         dna_seq = zlib.decompress(row[0]).decode('utf-8')
     for name in positions:
@@ -803,6 +804,141 @@ def chrom_plas(ncbi_file_path, input_param):
     handle.close()
     return organism_col, ftp_lnk, organism_arr, chr_ref
 
+
+def update_db(con, id_container, args_accession):
+    final_results = ""
+    cur =  con.cursor()
+    for i in range(0, len(id_container)):
+        # print("len of len(id_container): ", len(id_container))
+        left_corner = int(id_container[i][2]) - int(id_container[i][3])
+        if left_corner < 0:
+            left_corner = 0
+        right_corner = int(id_container[i][2]) + int(id_container[i][3])
+        input_param = id_container[i][1].strip().split(".")[0]
+        cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+        chr_ref = cur.fetchall()
+        if chr_ref != []:
+            cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
+                        (start_pos<=?2 and end_pos>=?3)""",
+                        (input_param + '._%', right_corner, left_corner))
+            rows = cur.fetchall()
+            for row in rows:
+                    # DESCRIPTION => row[0]=unique_number row[1]=acc
+                    # row[2]=locus_name row[3]=gene_name row[4]=start_pos
+                    # row[5]=end_pos row[6]=ori row[7]=protein_seq
+                    final_results += str(id_container[i][0]) + "\t" + str(row[1]) + "\t" + \
+                            str(row[3]) + "\t" + str(row[2]) + "\t" + \
+                            str(row[4]) + "\t" + str(row[5]) + "\t" + \
+                            str(row[6]) + "\t" + \
+                            str(zlib.decompress(row[7]).decode('utf-8') + \
+                            "\n")
+        else:
+            organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
+            # print("fayaz !! conn," + id_container[i][0], id_container[i][1],
+                    # id_container[i][2], id_container[i][3], organism_col, ftp_lnk, organism_arr, chr_ref)
+            final_results += get_data(con, id_container[i][0], id_container[i][1],
+                                    id_container[i][2], id_container[i][3],
+                                    organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
+    return final_results
+
+def find_srRNA_gene(args_accession, args_srRNA, id_container):
+    # srRNA_flag = False
+    final_results = ''
+    con = lite.connect(args.sqlite)
+    cur = con.cursor()
+    if args_srRNA:
+        for line in args_srRNA:
+            input_param = line.strip().split(".")[0]
+            cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+            chr_ref = cur.fetchall()
+            if chr_ref == []:
+                final_results = update_db(con, id_container, args_accession)
+        for line in args_srRNA:
+            input_param = line.strip().split(".")[0]
+            cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+            chr_ref = cur.fetchall()
+            if chr_ref != []:
+                if 'NA' in chr_ref[0][0]:
+                    print("No 16srRNA found !!!!!!!!!!!!!!\n")
+                else:
+                    cur.execute("SELECT * FROM [16sRNA] WHERE acc LIKE ?", (chr_ref[0][0],))
+                    rows = cur.fetchall()
+                    for i, line in enumerate(rows):
+                        print(">" + str(input_param))
+                        print(line[i+1])
+    elif args_accession:
+        final_results = update_db(con, id_container, args_accession)
+        if args.output != "":
+            # store data into file
+            handle = open(args.output, "w")
+            handle.write(final_results)
+            handle.close()
+        else:
+            print(final_results)
+
+    con.close()
+
+
+def input_check(input_param):
+    """input check to ensure Id has correct length"""
+    # with NZ length should be minimum 11
+    if "NZ_" in input_param and len(input_param)>10:
+        pass
+    # with NC length should be minimum 9
+    elif "NC_" in input_param and len(input_param)>8:
+        pass
+    # without NZ and NC should be minimum 9
+    elif not "NC_" in input_param and not "NZ_" in input_param and len(input_param)>5:
+        pass
+    else:
+        print("please check the organism ID")
+        # system exit
+        sys.exit()
+
+def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
+    flag = False
+    con = lite.connect(args_sqlite)
+    cur = con.cursor()
+    dna_flag = False
+
+    positions = defaultdict(list)
+    short_seq_all = dict()
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
+
+    with open(args_extDNA, 'r') as fr:
+        for line in fr:
+            id, start, stop, strand = line.split()
+            # print(id, start, stop, strand)
+            positions[id].append((int(start), int(stop), str(strand)))
+            input_param = line.strip().split(".") [0]
+            cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+            dseq = cur.fetchall()
+            # print(dseq)
+            if dseq != []:
+                # print("there is a sequence in DB")
+                short_seq_all = seq_extraction(dseq, positions, complement)
+            else:
+                final_results = ""
+                organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
+                # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
+                final_results += get_data(con, line[0], input_param,
+                                        int(args.position), int(args.range),
+                                        organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
+                cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                dseq = cur.fetchall()
+                if dseq != []:
+                    short_seq_all = seq_extraction(dseq, positions, complement)
+
+    print()
+    for data in short_seq_all:
+        print(">" + data)
+        print(short_seq_all[data])
+
+    # close db connection
+    con.close()
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--genbank", help="genbank file or path to \
@@ -830,12 +966,12 @@ if __name__ == "__main__":
                         string and returns a string with dna sequences\
                         - replaces blastdbcmd!", type=str, default="")
 
-    parser.add_argument("-rs", "--refseq", help="Parameter takes an\
+    parser.add_argument("-rs", "--refseq", help="Parameter takes \
                         organism and returns a refseq ID!",\
                         type=str, default="")
-    parser.add_argument("-rRNA", "--srRNA", help="Parameter takes an\
-                        organism and returns a refseq ID!",\
-                        type=str, default="")
+    parser.add_argument("-rRNA", "--srRNA", help="Parameter takes\
+                        organism(s) separated by space and returns 16srRNA(s)!",\
+                        type=str, nargs="*")
     parser.add_argument("-pdna", "--extDNA", help="Parameter takes a\
                         file with ID, start_seq, end_seq, strand in \
                         tab separated format (like bed format) and returns a part of DNA!",\
@@ -856,7 +992,7 @@ if __name__ == "__main__":
         # start pickle of data
         con = lite.connect(args.sqlite)
         insert_genbank(org_name, con, org_name.strip().split(".")[0], org_name.strip().split(".")[0], 'FALSE', ncbi_file_path)
-
+        con.close()
     # check if ncbi lookup-file needs to be updated or not!
     update_mode = args.update.split("-")
     
@@ -901,34 +1037,19 @@ if __name__ == "__main__":
         file_path = wget.download(genbank_summary_url, out=ncbi_folder_name)
         process_NCBI_lookup(file_path, ncbi_folder_name, ncbi_master_table)
         print()
-    # fayyaz remove the below call
-    # file_path = "/media/fejas/Data/CopraRNA/CopraRNA_upgraded/16sRNA_Detection/genbank_grabber/Syntney/packages/GENBANK_GROPER_SQLITE/myNCBI-LOOKUP/prokaryotes.txt"
-    # process_NCBI_lookup(file_path, ncbi_folder_name, ncbi_master_table)
-
-    # check input is a string or file
-    id_container = list()
+    
     # input_param to avoid execution of -g *.gbk again to get_download()
     input_param = ""
     if args.genbank:
         input_param = (args.genbank).strip().split(".")[0]
     if args.srRNA:
-        input_param = (args.srRNA).strip().split(".")[0]
+        input_param = args.srRNA
     if args.accession:
         input_param = (args.accession).strip().split(".")[0]
-        # print("input_param:" , input_param)
-        # input check to ensure Id has correct length
-        # with NZ length should be minimum 11
-        if "NZ_" in input_param and len(input_param)>10:
-            pass
-        # with NC length should be minimum 9
-        elif "NC_" in input_param and len(input_param)>8:
-            pass
-        # without NZ and NC should be minimum 9
-        elif not "NC_" in input_param and not "NZ_" in input_param and len(input_param)>5:
-            pass
-        else:
-            print("please check the organism ID")
-            sys.exit()
+        input_check(input_param)
+
+    # check input is a string or file 
+    id_container = list()
     if os.path.isfile(args.accession):
         handle = open(args.accession)
         for line in handle:
@@ -937,119 +1058,22 @@ if __name__ == "__main__":
             line_arr[2] = int(line_arr[2])
             line_arr[3] = int(line_arr[3])
             id_container.append(line_arr)
+    elif args.srRNA:
+        for line in args.srRNA:
+            id_container.append([args.id, line, int(args.position), int(args.range)])
     else:
-        # print("Accession input is not a file !!!!!!!!!!!\n")
+        # when input is an organism, not a file
         id_container.append([args.id, input_param, int(args.position), int(args.range)])
 
     if args.refseq:
         refseq = find_refseq(ncbi_file_path, args.refseq)
-        print("refseq ID of " , args.refseq , " is " , refseq , "!!!!!!!!!!\n")
-        # print("refseq: ", refseq)
+        print("refseq ID of " , input_param , " is " , refseq , "!!!!!!!!!!\n")
         sys.exit()
-    # organism_col, ftp_lnk, chr_ref, organism_arr = chrom_plas(ncbi_file_path, input_param)
-    
-    # get final results
-    srRNA_flag = False
-    if args.accession or args.srRNA:
-        # print("Inouts to chrom_plas: ", ncbi_file_path, input_param)
-        flag = False
-        con = lite.connect(args.sqlite)
-        cur = con.cursor()
         
-        if args.srRNA:
-            input_param = args.srRNA.strip().split(".")[0]
-            # print(input_param)
-            cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-            chr_ref = cur.fetchall()
-            if chr_ref != []:
-                srRNA_flag = True
-                flag = True
-                if 'NA' in chr_ref[0][0]:
-                    print("No 16srRNA found !!!!!!!!!!!!!!\n")
-                else:
-                    cur.execute("SELECT * FROM [16sRNA] WHERE acc LIKE ?", (chr_ref[0][0],))
-                    rows = cur.fetchall()
-                    # print(rows)
-                    for i, line in enumerate(rows):
-                        print(">" + str(input_param))
-                        print(line[i+1])
-        if flag == False:
-            final_results = ""
-            # con = lite.connect(args.sqlite)
-            for i in range(0, len(id_container)):
-                input_param = id_container[i][1].strip().split(".")[0]
-                organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
-                # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
-            
-                # print("fayaz !! conn," + id_container[i][0], id_container[i][1],
-                        # id_container[i][2], id_container[i][3], organism_col, ftp_lnk, organism_arr, chr_ref)
-                final_results += get_data(con, id_container[i][0], id_container[i][1],
-                                        id_container[i][2], id_container[i][3],
-                                        organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
-            
-        # close db connection
-        con.close()
-    # store or print final results
-    if args.accession:
-        if args.output != "":
-            # print("args.output != is executed")
-            # store data into file
-            handle = open(args.output, "w")
-            handle.write(final_results)
-            handle.close()
-        else:
-            print()
-            print(final_results)
-    if not srRNA_flag and args.srRNA:
-        con = lite.connect(args.sqlite)
-        cur = con.cursor()
-        cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-        chr_ref = cur.fetchall()
-        cur.execute("SELECT * FROM [16sRNA] WHERE acc LIKE ?", (chr_ref[0][0],))
-        rows = cur.fetchall()
-        # print(rows)
-        for i, line in enumerate(rows):
-            print(">" + str(input_param))
-            print(line[i+1])
-        con.close()
+    if args.accession or args.srRNA:
+        find_srRNA_gene(args.accession, args.srRNA, id_container )
 
     if args.extDNA:
-        flag = False
-        con = lite.connect(args.sqlite)
-        cur = con.cursor()
-        dna_flag = False
-
-        positions = defaultdict(list)
-        short_seq_all = dict()
-        complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
-
-        with open(args.extDNA, 'r') as fr:
-            for line in fr:
-                name, start, stop, strand = line.split()
-                positions[name].append((int(start), int(stop), str(strand)))
-                input_param = line.strip().split(".") [0]
-                cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-                dseq = cur.fetchall()
-                if dseq != []:
-                    short_seq_all = seq_extraction(dseq)
-                else:
-                    final_results = ""
-                    # con = lite.connect(args.sqlite)
-                    # print("ncbi_file_path, input_param:", ncbi_file_path, input_param)
-                    organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
-                    # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
-                    final_results += get_data(con, line[0], input_param,
-                                            int(args.position), int(args.range),
-                                            organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
-                    cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-                    dseq = cur.fetchall()
-                    if dseq != []:
-                        short_seq_all = seq_extraction(dseq)
-
-        print()
-        for data in short_seq_all:
-            print(">" + data)
-            print(short_seq_all[data])
-
-        # close db connection
-        con.close()
+        # print(args.extDNA)
+        dna_extraction(args.extDNA, args.sqlite, ncbi_file_path)
+        
