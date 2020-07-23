@@ -1,34 +1,26 @@
-
-# GLASSgo postprocessing script
+#!/usr/bin/Rscript
 
 # dependencies: 
 require(stringi)
 
 
 #CALL:
-#R --slave -f  ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta synteny_window=3000 script_path=~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db
-#<<<<<<< develop
-#	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
-#=======
-#	python3 ~/Syntney/Syntney.py -i sRNA.fasta  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
-#>>>>>>> master
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/syntney.db < ~/media/jens@margarita/Syntney/Rfam_db.fasta
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/mySQLiteDB_new.db
 
-filename<-"sRNA.fasta" # result fasta file from GLASSgo
+#	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+
+filename<-file('stdin', 'r') # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
-db_path<-"~/Syntney/mySQLiteDB_new.db"
+db_path<-"~/Syntney/mySQLiteDB_new2.db"
 threads<-30
 name<-"sRNA"
 write_files<-F
-#<<<<<<< develop
-rRNA_required<-TRUE
+rRNA_existence_threshold<-0.6
 
 synteny_window<-3000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
-#=======
-
-#synteny_window<-5000 # number of bases upstream and downstream of the sRNA that were searched for protein coding genes for the synteny analysis
-#>>>>>>> master
 
 args <- commandArgs(trailingOnly = TRUE) 
 
@@ -43,7 +35,7 @@ for(i in 1:length(args)){
 synteny_window<-as.numeric(synteny_window)
 threads<-as.numeric(threads)
 write_files<-as.logical(write_files)
-rRNA_required<-as.logical(rRNA_required)
+rRNA_existence_threshold<-as.numeric(rRNA_existence_threshold)
 
 split_glassgo<-function(x){
 	tmp<-strsplit(x[1], ">")[[1]]
@@ -131,12 +123,6 @@ get_prot_fasta3<-function(out, filen){
         }
       }
     }
-	header<-grep(">",fasta)
-	dup<-which(duplicated(fasta[header]))
-	if(length(dup)>0){
-		del<-c(header[dup],header[dup]+1)
-		fasta<-fasta[-del]
-	}
   write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
 }
 
@@ -186,6 +172,7 @@ proc_cdhit<-function(x){
 
 
 fasta<-read.delim(filename, header=F, sep="\t")
+closeAllConnections()
 fasta<-as.character(fasta[,1])
 coor<-export_ncRNA_coordinates(fasta)
 
@@ -199,8 +186,25 @@ if(length(empty)>0){
 	rRNA<-rRNA[-c(empty,empty+1)]
 }
 
+
+# check number of input sequences with coreesponding rRNA
+orgs<-grep(">", rRNA)
+orgs2<-gsub(">","",rRNA[orgs])
+
+rRNA2<-c()
+count<-0
+for(i in 1:length(orgs)){
+	tmp<-grep(orgs2[i], coor[,1])
+	if(length(tmp)>0){
+		count<-count+length(tmp)
+		for(j in 1:length(tmp)){
+			rRNA2<-c(rRNA2,coor[tmp[j],"Full_header"],rRNA[orgs[i]+1])
+		}		
+	}
+}
+
 removed2<-c()
-if(rRNA_required==TRUE){
+if(count/nrow(coor)>=rRNA_existence_threshold){
 	orgs<-grep(">", rRNA)
 	orgs<-gsub(">","",rRNA[orgs])
 	removed<-c()
@@ -214,7 +218,11 @@ if(rRNA_required==TRUE){
 		removed2<-coor[removed,1]
 		coor<-coor[-removed,]
 	}	
+} 
+if(length(removed2)>0){
+	removed2<-cbind(removed2, rep("no_16S_rRNA",length(removed2)))
 }
+
 
 s<-as.numeric(coor[,3])
 e<-as.numeric(coor[,4])
@@ -229,8 +237,6 @@ write.table(coor3,file=coordinates, sep="\t", row.names=F, col.names=F, quote=F)
 
 command<-paste("python3 ", script_path, " -s ", db_path, " -a ", coordinates)
 
-#print(command)
-#dat<-do.call(rbind,strsplit(system(command, intern=T),"\t")) 
 dat<-system(command, intern=T)
 empty<-which(dat=="")
 if(length(empty)>0){
@@ -238,30 +244,24 @@ if(length(empty)>0){
 }
 dat<-do.call(rbind,strsplit(dat,"\t")) 
 
-
-#<<<<<<< develop
-unlink(coordinates)
-#=======
-
-#unlink("coordinates.txt")
-#>>>>>>> master
-na<-which(dat[,3]=="no annotation")
-na2<-which(dat[,3]=="missing entry in LUT")
-na<-c(na,na2)
-
-#<<<<<<< develop
-no_anno<-dat[na,1]
-no_anno<-c(removed2,no_anno)
-#=======
-#no_anno<-dat[na,1:2]
-
-#>>>>>>> master
-
+na<-setdiff(coor3[,1],unique(dat[,1]))
 if(length(na)>0){
-	dat<-dat[-na,]
+	tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
+	coor<-coor[-tmp,]
+	na<-cbind(na, rep("not_in_database/no_annotatio",length(na)))
 }
-ids<-unique(dat[,1])
+unlink(coordinates)
 
+no_anno<-rbind(removed2,na)
+
+if(count/nrow(coor)<rRNA_existence_threshold){
+	rRNA2<-c()
+	for(i in 1:nrow(coor)){
+		rRNA2<-c(rRNA2,coor[i,"Full_header"],coor[i,"sequence"])
+	}
+}
+
+ids<-unique(dat[,1])
 id2<-paste(coor[,1],coor[,3],sep="_")
 
 out<-vector("list", length(ids))
@@ -375,14 +375,9 @@ synteny<-synt_table(out,coor)
 
 cluster<-cluster_table(cd,dat, synteny)
 
-
-
-
-
-
 if(write_files==TRUE){
 	write.table(cluster[[1]], file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
-	
+	writeLines(rRNA2, con=paste(name,"16S_rRNA.fasta",sep="_"))
 	write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
 	write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
 } else {
@@ -393,31 +388,9 @@ if(write_files==TRUE){
 	cat("#network_annotation\n")
 	write.table(cluster[[2]], file=stdout(), sep="\t", quote=F,row.names = FALSE )
 	cat("#missing_data\n")
-#<<<<<<< develop
-	#x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
-	#cat(paste(x, collapse = "\n"))
-	cat(paste(no_anno, collapse = "\n"))
+	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
+	cat(paste(x, collapse = "\n"))
 	cat("\n#16S_RNA\n")
-	cat(paste(rRNA, collapse = "\n"))
+	cat(paste(rRNA2, collapse = "\n"))
 }
 
-
-#=======
-#	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
-#	cat(paste(x, collapse = "\n"))
-#}
-
-
-
-
-
-
-
-#tags<-(unlist(strsplit(synteny[[1]][,"neighbourhood_genes"],",")))
-
-
-
-#clus_tags<-(unlist(strsplit(cluster[[1]],",")))
-
-
-#>>>>>>> master
