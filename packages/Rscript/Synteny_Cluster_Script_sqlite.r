@@ -5,7 +5,9 @@ require(stringi)
 
 
 #CALL:
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/mySQLiteDB_new.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/syntney.db < ~/media/jens@margarita/Syntney/Rfam_db.fasta
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/mySQLiteDB_new.db
+
 #	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
@@ -170,6 +172,7 @@ proc_cdhit<-function(x){
 
 
 fasta<-read.delim(filename, header=F, sep="\t")
+closeAllConnections()
 fasta<-as.character(fasta[,1])
 coor<-export_ncRNA_coordinates(fasta)
 
@@ -374,7 +377,7 @@ cluster<-cluster_table(cd,dat, synteny)
 
 if(write_files==TRUE){
 	write.table(cluster[[1]], file=paste(name,"cluster_table.txt",sep="_"), sep="\t", quote=F)
-	
+	writeLines(rRNA2, con=paste(name,"16S_rRNA.fasta",sep="_"))
 	write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
 	write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
 } else {
