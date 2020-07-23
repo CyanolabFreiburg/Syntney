@@ -4,9 +4,12 @@ import numpy as np
 #from colour import Color
 import argparse
 import subprocess
+from subprocess import run, PIPE
 from ete3 import *
 import shutil
 import sys
+import tempfile
+
 
 # produces synteny file and cluster file with an R script. Therefore uses the input network fasta file and test fasta
 # file. Synteny window is used for the extraction window and is per default set to 5000
@@ -60,21 +63,28 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
                         seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
     else:
         test_ids = None
-    #TODO syntenyfile.fasta must be replaced by another method; otherwise multiple access will raise errors
-    f = open(wdir + "syntenyfile.fasta", "w")
-    for element in seqdict:
-        desc, seq = seqdict[element]
-        f.write(">" + desc + "\n" + str(seq) + "\n")
-    f.close()
     
-    proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + wdir + "syntenyfile.fasta", "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
+    try:
+        f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        f_path = f.name
+        for element in seqdict:
+            desc, seq = seqdict[element]
+            f.write(">" + desc + "\n" + str(seq) + "\n")
+        f.close()
+
+        proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
     
+    finally:
+        # remove tmp file 
+        os.unlink(f.name)
+
     master_table = proc.stdout.split("\n")
     # sort master table into subtables - syntenyfile_cluster_table - syntenyfile_synteny_table - network_annotation_table
     syntenyfile_cluster_table = list()
     syntenyfile_synteny_table = list()
     network_annotation_table = list()
     missing_ids_table = list()
+    rRNA_network_table = list()
 
     list_name = ""
     for i in range(0, len(master_table)):
@@ -89,6 +99,8 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             network_annotation_table.append(master_table[i])
         if list_name == "#missing_data":
             missing_ids_table.append(master_table[i])
+        if list_name == "#16S_RNA":
+            rRNA_network_table.append(master_table[i])
 
         if master_table[i].startswith("#cluster_table"):
             list_name = "#cluster_table"
@@ -98,15 +110,11 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             list_name = "#network_annotation"
         if master_table[i].startswith("#missing_data"):
             list_name = "#missing_data"
-
-    #r_script_cluster_table = wdir + "syntenyfile_cluster_table.txt"
-    #r_script_synteny_table = wdir + "syntenyfile_synteny_table.txt"
-
-    #TODO remove next line
-    os.system("rm " + wdir + "syntenyfile.fasta")
+        if master_table[i].startswith("#16S_RNA"):
+            list_name = "#16S_RNA"
 
     #return r_script_cluster_table, r_script_synteny_table, network_ids, test_ids
-    return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, network_ids, test_ids
+    return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, rRNA_network_table, network_ids, test_ids
 
 # produces a dictionary from the identifiers of sRNAs (ids). Identifiers must be like "Accessionnumber" + underscore +
 # "starting position of hit" (e.g. CP001291.1_4248628). The synteny dictionary (synteny_dict) contains sRNA surrounding
@@ -151,42 +159,6 @@ def get_synteny_dict(ids, r_script_synteny_table):
     return synteny_dict
 
 
-
-#def get_synteny_dict(ids, r_script_synteny_table):
-#    synteny_dict = dict()
-#    with open(r_script_synteny_table) as f:
-#        next(f)
-#        for line in f:
-#            line = line.rstrip()
-#            handle = line.split("\t")
-#            seq_id = handle[0]
-#            if seq_id not in synteny_dict:
-#                if seq_id in ids:   # checks whether the id from master table should be added to the synteny_dict
-#                    synteny_dict.update({seq_id: []})
-#                    proteins = handle[4].split(",") # all surrounding proteins
-#                    positions = handle[5].split(",")  # positions of all surrounding proteins positions[x] is position of proteins[x]
-#                    downstream_dict = {}    # dict of proteins downstream the sRNA ({protein: position, ... })
-#                    upstream_dict = {}      # proteins upstream the sRNA
-#                    switch = 0              # needed to switch at position 1 from upstream to downstream
-#                    for x in range(len(proteins)): # adds proteins to down and upstream dict
-#                        if int(positions[x]) < 10:
-#                            if switch == 0:
-#                                if positions[x] == "1":
-#                                    switch = 1
-#                            if switch == 2:
-#                                downstream_dict.update({proteins[x]: positions[x]})
-#
-#                            if switch < 2:
-#
-#                                upstream_dict.update({proteins[x]: positions[x]})
-#                                if switch == 1:
-#                                    switch = 2
-#                    synteny_dict[seq_id].append(upstream_dict)
-#                    synteny_dict[seq_id].append(downstream_dict)
-#
-#    return synteny_dict
-
-
 # Returns a cluster_dict where proteins from the synteny_table point on their clusters.
 # {Protein1: Cluster_1,
 #  Protein2: Cluster_2}
@@ -201,20 +173,6 @@ def get_clusters(r_script_cluster_table):
             for element in cluster:
                 cluster_dict.update({element: name})
     return cluster_dict
-
-#def get_clusters(r_script_cluster_table):
-#    f = open(r_script_cluster_table)
-#    cluster_dict = dict()
-#    for line in f:
-#        line = line.rstrip()
-#        if line.startswith("cluster"):
-#            handle = line.split("\t")
-#            name = handle[0]
-#            cluster = handle[1].split(",")
-#            for element in cluster:
-#                cluster_dict.update({element: name})
-#
-#    return cluster_dict
 
 
 # Uses a synteny_dict and a cluster_dict to APPEND clusters matching the proteins of entries in a synteny_dict.
@@ -311,39 +269,44 @@ def tree_construction(wdir, network_file):
     count = 0
     tree_iddict = dict()
     forbidden = set()
-
     # produces a FASTA with numbers instead of original headers and a tree_iddict that is used to get the number
     # from an identifier
-    f = open(wdir + "treefasta.tmp", "w")
-    for seq_record in SeqIO.parse(network_file, "fasta"):
-        if seq_record.description not in forbidden:
-            seq_id = seq_record.id.split(":")
-            if len(seq_id) > 1:
-                pos = seq_id[1].split("-")[0]
-                if pos.startswith("c"):
-                    pos = pos[1::]
-                seq_id = seq_id[0] + "_" + pos
-                f.write(">" + str(count) + "\n" + str(seq_record.seq) + "\n")
-                tree_iddict.update({seq_id: str(count)})
-                count += 1
-                forbidden.add(seq_record.description)
-    f.close()
-    # produces a distance matrix from the numbered FASTA via clustalo
-    os.system("clustalo --infile=" + wdir + "treefasta.tmp -o align.out --distmat-out=" + wdir + "distmat.txt --full --force -v")
-    os.system("rm align.out")
-    # uses quicktree to built a tree from the distance matrix and removes the distance matrix
-    os.system("quicktree -in m " + wdir + "distmat.txt >" + wdir + "tree.tmp")
-    os.system("rm " + wdir + "distmat.txt")
-    # produces a ete3 object from the tree and removes the treefile and the tree FASTA
-    f = open(wdir + "tree.tmp")
-    tree = str()
-    for line in f:
-        line = line.rstrip()
-        tree = tree + line
-    f.close()
-    tree = Tree(tree, format=1)
-    os.system("rm " + wdir + "tree.tmp")
-    os.system("rm " + wdir + "treefasta.tmp")
+    try:
+        tmp_fasta = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        for seq_record in SeqIO.parse(network_file, "fasta"):
+            if seq_record.description not in forbidden:
+                seq_id = seq_record.id.split(":")
+                if len(seq_id) > 1:
+                    pos = seq_id[1].split("-")[0]
+                    if pos.startswith("c"):
+                        pos = pos[1::]
+                    seq_id = seq_id[0] + "_" + pos
+                    tmp_fasta.write(">" + str(count) + "\n" + str(seq_record.seq) + "\n")
+                    tree_iddict.update({seq_id: str(count)})
+                    count += 1
+                    forbidden.add(seq_record.description)
+        tmp_fasta.close()
+
+        # produces a distance matrix from the numbered FASTA via clustalo
+        tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
+        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")       
+        # uses quicktree to built a tree from the distance matrix and removes the distance matrix
+        tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
+        os.system("quicktree -in m " + str(tmp_clustalo.name) + " > " + str(tmp_quicktree.name))
+        # produces a ete3 object from the tree and removes the treefile and the tree FASTA
+        f = open(tmp_quicktree.name, "r")
+        tree = str()
+        for line in f:
+            line = line.rstrip()
+            tree = tree + line
+        f.close()
+        tree = Tree(tree, format=1)
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+    finally:
+        os.unlink(tmp_fasta.name)
+        os.unlink(tmp_clustalo.name)
+        os.unlink(tmp_quicktree.name) 
     return tree_iddict, tree
 
 
@@ -529,7 +492,6 @@ def bellman_ford(lite_network, source):
         for u in lite_network:
             for v in lite_network[u]:  # For each neighbour of u
                 relax(u, v, lite_network, d, p, i)  # Lets relax it
-
     return d, p
 
 
@@ -622,9 +584,7 @@ def pagerank(network, eps=1.0e-14, teleport=False):
             i_table.append(i)
             value = network[cluster][1][connected_cluster][0]
             weights.append(value)
-
             lines[iddict[connected_cluster]].append(count)
-
             count += 1
 
     i_table = np.array(i_table)
@@ -837,7 +797,7 @@ def visualize_cytoscape_network(network, outfile):
 #                       [downstream_Cluster]]}
 def output_cluster_synteny_file(syteny_table, outfile):
     f = open(outfile, "w")
-    f.write("identiefier\tupstream cluster\tdownstream cluster\n")
+    f.write("identifier\tupstream cluster\tdownstream cluster\n")
     for entry in syteny_table:
         upstream = syteny_table[entry][2]
         downstream = syteny_table[entry][3]
@@ -946,7 +906,7 @@ def main():
     os.mkdir("TMP")
     
     try:
-        r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
+        r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, r_rRNA_network_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
                                                                                                             wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
                                                                                                             args.num_threads, synteny_window=
                                                                                                             str(args.synteny_window))
@@ -1001,7 +961,7 @@ def main():
         pass
 
     #delete TMP folder
-    #shutil.rmtree(wdir)
+    shutil.rmtree(wdir)
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
