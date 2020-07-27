@@ -204,7 +204,7 @@ for(i in 1:length(orgs)){
 		count<-count+length(tmp)
 		rRNA3<-matrix(,length(tmp),2)
 		for(j in 1:length(tmp)){
-			rRNA3[j,1]<-coor[j,"Full_header"]
+			rRNA3[j,1]<-coor[tmp[j],"Full_header"]
 			rRNA3[j,2]<-rRNA[orgs[i]+1]
 		}
 		rRNA2<-rbind(rRNA2,rRNA3)
