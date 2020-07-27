@@ -13,8 +13,24 @@ SYNTNEY uses the PageRank algorithm combined with a modified version of the
 Bellman-Ford algorithm to calculate synteny values. These Values are added to the end 
 of sequence headers in the output FASTA files
 
+**Get Started**
 
-**Sequence Input:**
+If you are using Conda / Miniconda (https://docs.conda.io/en/latest/miniconda.html), 
+you can easylie setup your environment using the Syntney_Conda.yml file.
+
+Command-line Call:
+```
+conda env create -f Syntney_Conda.yml
+```
+
+This command builds a new environment with all needed dependencies for running Syntney.py successfully.
+
+Activate Conda Environment:
+```
+conda activate Syntney
+```
+
+**Syntney Parameters:**
 ```
 -i --network_file
 		fasta file containing sequences used for network construction
@@ -73,9 +89,10 @@ of sequence headers in the output FASTA files
 ```
 	
 **Example:**
+Before Syntney.py can be applied to a specific dataset; a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
 
 ```
-	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
+	python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
 ```	
 
 will run the script and add synteny value (SV) for sequences in 
@@ -85,9 +102,8 @@ The output will be written into the current directory and named:
 		synteny_questionable.fasta 	(candidates.fasta with SV in header) 
 		
 ```		
-	python3 Syntney.py -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
+	python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
 ```	
 
 will additionally produce a svg image of the network in the current folder named:
 		synteny_network.svg
-		
