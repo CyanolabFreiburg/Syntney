@@ -6,7 +6,10 @@ require(stringi)
 
 #CALL:
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/syntney.db < ~/media/jens@margarita/Syntney/Rfam_db.fasta
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=sRNA.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/mySQLiteDB_new.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/inputForJens.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new.db
+
+
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/Syntney/sRNA.fasta  synteny_window=3000 script_path=~/synt_test/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new4.db
 
 #	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
@@ -191,15 +194,19 @@ if(length(empty)>0){
 orgs<-grep(">", rRNA)
 orgs2<-gsub(">","",rRNA[orgs])
 
+
 rRNA2<-c()
 count<-0
 for(i in 1:length(orgs)){
 	tmp<-grep(orgs2[i], coor[,1])
 	if(length(tmp)>0){
 		count<-count+length(tmp)
+		rRNA3<-matrix(,length(tmp),2)
 		for(j in 1:length(tmp)){
-			rRNA2<-c(rRNA2,coor[tmp[j],"Full_header"],rRNA[orgs[i]+1])
-		}		
+			rRNA3[j,1]<-coor[j,"Full_header"]
+			rRNA3[j,2]<-coor[j,"sequence"]
+		}
+		rRNA2<-rbind(rRNA2,rRNA3)
 	}
 }
 
@@ -255,9 +262,10 @@ unlink(coordinates)
 no_anno<-rbind(removed2,na)
 
 if(count/nrow(coor)<rRNA_existence_threshold){
-	rRNA2<-c()
+	rRNA2<-matrix(,nrow(coor),2)
 	for(i in 1:nrow(coor)){
-		rRNA2<-c(rRNA2,coor[i,"Full_header"],coor[i,"sequence"])
+		rRNA2[i,1]<-coor[i,"Full_header"]
+		rRNA2[i,2]<-coor[i,"sequence"]
 	}
 }
 
@@ -387,10 +395,11 @@ if(write_files==TRUE){
 	write.table(synteny[[1]], file=stdout(), sep="\t", quote=F, row.names=F)	
 	cat("#network_annotation\n")
 	write.table(cluster[[2]], file=stdout(), sep="\t", quote=F,row.names = FALSE )
+	cat("#16S_RNA\n")
+	write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE ,col.names=FALSE)
 	cat("#missing_data\n")
 	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	cat(paste(x, collapse = "\n"))
-	cat("\n#16S_RNA\n")
-	cat(paste(rRNA2, collapse = "\n"))
+	
 }
 
