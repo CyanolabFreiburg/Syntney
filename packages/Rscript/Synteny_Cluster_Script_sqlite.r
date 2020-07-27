@@ -13,6 +13,7 @@ require(stringi)
 
 #	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
+
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
 script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
@@ -143,7 +144,7 @@ cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, 
 		inp<-paste("cd-hit -i ", fasta,  " -d 50 -o ",tempf, " -c ",  thres ," -n 2", " -aL 0.6", " -T ", threads, sep="")
 	}
 	 # print(inp)
-	 system(inp)
+	 system(inp, intern=T)
 	 cd<-paste(tempf, ".clstr", sep="")
 	 cd<-readLines(cd)
 	 cd<-as.character(cd)
@@ -204,7 +205,7 @@ for(i in 1:length(orgs)){
 		rRNA3<-matrix(,length(tmp),2)
 		for(j in 1:length(tmp)){
 			rRNA3[j,1]<-coor[j,"Full_header"]
-			rRNA3[j,2]<-coor[j,"sequence"]
+			rRNA3[j,2]<-rRNA[orgs[i]+1]
 		}
 		rRNA2<-rbind(rRNA2,rRNA3)
 	}
@@ -396,10 +397,12 @@ if(write_files==TRUE){
 	cat("#network_annotation\n")
 	write.table(cluster[[2]], file=stdout(), sep="\t", quote=F,row.names = FALSE )
 	cat("#16S_RNA\n")
-	write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE ,col.names=FALSE)
+	write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE, col.names=FALSE )
 	cat("#missing_data\n")
 	x <- capture.output(write.table(no_anno, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	cat(paste(x, collapse = "\n"))
 	
+	#y <- capture.output(write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
+	#cat(paste(y, collapse = "\n"))
 }
 
