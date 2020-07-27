@@ -5,7 +5,7 @@ sequences with no homologous gene neighborhood will get a low score.
 
 The workflow was originally developed to work with the output of a GLASSgo sRNA
 search as list of trustable hologous sequences. Further the synteny of unknown 
-sequences e.g. from a BLAST search can be scored.  To score sequences the header 
+sequences e.g. from a BLAST search can be scored.  To score sequences, the header 
 in the input FASTA file needs to start with the NCBI accession number followed by 
 a : and the starting position of the hit in the genome. 
 
@@ -92,7 +92,7 @@ conda activate Syntney
 Before Syntney.py can be applied to a specific dataset; a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
 
 ```
-	python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
+python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
 ```	
 
 will run the script and add synteny value (SV) for sequences in 
@@ -102,7 +102,7 @@ The output will be written into the current directory and named:
 		synteny_questionable.fasta 	(candidates.fasta with SV in header) 
 		
 ```		
-	python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
+python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny -n svg
 ```	
 
 will additionally produce a svg image of the network in the current folder named:
