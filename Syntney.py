@@ -29,9 +29,14 @@ import tempfile
 def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_script_path, num_threads, synteny_window=str(5000)):
     seqdict = dict()
     network_ids = dict()
+    fasta_header_network = dict()
     for seq_record in SeqIO.parse(network_file, "fasta"):
         seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
         seq_id = seq_record.description
+        # fasta_header_network used for filtering the output from the R-Script
+        tmp_fasta_header = ">" + str(seq_id)
+        fasta_header_network[tmp_fasta_header] = 0
+        
         seq_id = seq_id.split("-")
         if len(seq_id) == 1:
             pass
@@ -46,7 +51,6 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
     test_ids = dict()
     if test_file is not None:
         for seq_record in SeqIO.parse(test_file, "fasta"):
-
             seq_id = seq_record.description
             seq_id = seq_id.split("-")
             if len(seq_id) == 1:
@@ -72,7 +76,9 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             f.write(">" + desc + "\n" + str(seq) + "\n")
         f.close()
 
-        proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
+        
+        proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "synteny_window=" + synteny_window, "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
+        #proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
     
     finally:
         # remove tmp file 
@@ -90,7 +96,6 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
     for i in range(0, len(master_table)):
         if master_table[i].startswith("#"):
             list_name = "-"
-
         if list_name == "#cluster_table":
             syntenyfile_cluster_table.append(master_table[i])
         if list_name == "#synteny_table":
@@ -100,8 +105,10 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
         if list_name == "#missing_data":
             missing_ids_table.append(master_table[i])
         if list_name == "#16S_RNA":
-            rRNA_network_table.append(master_table[i])
-
+            tmp_entry = master_table[i].split("\t")
+            if tmp_entry[0] in fasta_header_network:
+                rRNA_network_table.append(tmp_entry[0])
+                rRNA_network_table.append(tmp_entry[1])
         if master_table[i].startswith("#cluster_table"):
             list_name = "#cluster_table"
         if master_table[i].startswith("#synteny_table"):
@@ -265,7 +272,7 @@ def build_network(synteny_dict):
 # builds and returns a ete3 tree from the sRNA sequences from a "fasta" infile (should be the trustable GLASSgo file).
 # as the tree is built with numbers instead of the identifier ("accession id"_"starting nucleotide"), also a tree_iddict
 # is returned where the id points on the corresponding number.
-def tree_construction(wdir, network_file):
+def tree_construction(rRNA_data):
     count = 0
     tree_iddict = dict()
     forbidden = set()
@@ -273,18 +280,23 @@ def tree_construction(wdir, network_file):
     # from an identifier
     try:
         tmp_fasta = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        for seq_record in SeqIO.parse(network_file, "fasta"):
-            if seq_record.description not in forbidden:
-                seq_id = seq_record.id.split(":")
-                if len(seq_id) > 1:
-                    pos = seq_id[1].split("-")[0]
-                    if pos.startswith("c"):
-                        pos = pos[1::]
-                    seq_id = seq_id[0] + "_" + pos
-                    tmp_fasta.write(">" + str(count) + "\n" + str(seq_record.seq) + "\n")
-                    tree_iddict.update({seq_id: str(count)})
-                    count += 1
-                    forbidden.add(seq_record.description)
+        tmp_header = ""
+        for line in rRNA_data:
+            if line.startswith(">"):
+                line = line[1:]
+                if line not in forbidden:
+                    seq_id = line.split(":")
+                    if len(seq_id) > 1:
+                        pos = seq_id[1].split("-")[0]
+                        if pos.startswith("c"):
+                            pos = pos[1::]
+                        seq_id = seq_id[0] + "_" + pos
+                        tree_iddict.update({seq_id: str(count)})
+                        tmp_header = str(count)
+                        count += 1
+                        forbidden.add(line)
+            else:
+                tmp_fasta.write(">" + str(tmp_header) + "\n" + str(line) + "\n")
         tmp_fasta.close()
 
         # produces a distance matrix from the numbered FASTA via clustalo
@@ -306,7 +318,7 @@ def tree_construction(wdir, network_file):
     finally:
         os.unlink(tmp_fasta.name)
         os.unlink(tmp_clustalo.name)
-        os.unlink(tmp_quicktree.name) 
+        os.unlink(tmp_quicktree.name)
     return tree_iddict, tree
 
 
@@ -384,8 +396,9 @@ def add_outgoing_connection_weights(network):
 # output:
 # network   {cluster: [normalized sum of outgoing connections, {connected_cluster1: [normalized weight of this connection,
 #               [list of accessions with this connection], sum of branches weight], ...}[list of Accessions with "cluster"]}
-def normalize_connections(wdir, network_file, network):
-    tree_iddict, tree = tree_construction(wdir, network_file)
+def normalize_connections(rRNA_data, network):
+    ###tree_iddict, tree = tree_construction(wdir, network_file)
+    tree_iddict, tree = tree_construction(rRNA_data)
     treelength = whole_tree_length(tree) # whole tree length
     values = []
     zeroweights = []  # stores connections with a weight of 0
@@ -926,8 +939,10 @@ def main():
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
-    
+    ###network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
+    network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network)
+
+
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
     
