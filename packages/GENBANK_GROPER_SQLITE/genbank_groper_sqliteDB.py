@@ -449,7 +449,7 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag, ncbi_file_path):
                         
                     else:
                         consensus_seq = "No 16sRNA sequence found"
-                        print("No 16sRNA sequence found")
+                        # print("No 16sRNA sequence found")
                     
                     # remove the output files created by barrnap
                     # os.system("rm -f " + str(gb_record.id) + "*.fai")
@@ -806,6 +806,7 @@ def chrom_plas(ncbi_file_path, input_param):
 
 
 def update_db(con, id_container, args_accession):
+    # print("id_container, args_accession: ", id_container, args_accession)
     final_results = ""
     cur =  con.cursor()
     for i in range(0, len(id_container)):
@@ -849,10 +850,14 @@ def find_srRNA_gene(args_accession, args_srRNA, id_container):
     if args_srRNA:
         for line in args_srRNA:
             input_param = line.strip().split(".")[0]
+            # print("input_param", input_param)
             cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
             chr_ref = cur.fetchall()
             if chr_ref == []:
-                final_results = update_db(con, id_container, args_accession)
+                for data in id_container:
+                    if input_param in data[1]:
+                        input_list = [data]
+                        final_results = update_db(con, input_list, args_accession)
         for line in args_srRNA:
             input_param = line.strip().split(".")[0]
             cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
