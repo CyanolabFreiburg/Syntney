@@ -6,6 +6,7 @@ channels:
   - defaults
   - conda
   - anaconda
+  - etetoolkit
 dependencies:
   - python >=3.7
   - biopython
@@ -16,3 +17,4 @@ dependencies:
   - numpy 
   - cytoscape 
   - cd-hit
+  - ete3
