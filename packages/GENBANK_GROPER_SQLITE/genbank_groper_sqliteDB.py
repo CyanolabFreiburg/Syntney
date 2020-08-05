@@ -130,16 +130,17 @@ def seq_check_db(con, organism, dna_file):
 def execute_barrbap(organism, dna_file):
     """determines the 16sRNA sequences using barrnap tool"""
     # barrnap output file name e.g. barrnap.NC_000913
-    barrnap_out = "barrnap." + organism
+    barrnap_out = cwd + "/barrnap." + organism
     # > /dev/null 2>&1 is to disable stdout from displaying on terminal
-    barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + cwd + \
-                  "/" + barrnap_out + " > /dev/null 2>&1"
-
-    # barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + cwd + \
-                #   "/" + barrnap_out
+    # print(barrnap_out)
+    barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + barrnap_out + " > /dev/null 2>&1"
+    # barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + barrnap_out
     os.system(barrnap_cmd)
     # print("\nbarrnap execution completed !!!")
-
+    if not os.path.isfile(barrnap_out):
+        file_cmd = "touch " + barrnap_out
+        os.system(file_cmd)
+    # print("os.path.isfile(barrnap_out) : ", os.path.isfile(barrnap_out) )
     return barrnap_out
 
 
@@ -901,16 +902,17 @@ def update_db(con, id_container):
     # con = lite.connect(args.sqlite)
     # print("id_container:", id_container)
     # print("ncbi_file_path:", ncbi_file_path)
-    with con:
-        cur =  con.cursor()
-        for i in range(0, len(id_container)):
-            # print("len of len(id_container): ", len(id_container))
-            left_corner = int(id_container[i][2]) - int(id_container[i][3])
-            if left_corner < 0:
-                left_corner = 0
-            right_corner = int(id_container[i][2]) + int(id_container[i][3])
-            input_param = id_container[i][1].strip().split(".")[0]
-            try:
+    try:
+        with con:
+            cur =  con.cursor()
+            for i in range(0, len(id_container)):
+                # print("len of len(id_container): ", len(id_container))
+                left_corner = int(id_container[i][2]) - int(id_container[i][3])
+                if left_corner < 0:
+                    left_corner = 0
+                right_corner = int(id_container[i][2]) + int(id_container[i][3])
+                input_param = id_container[i][1].strip().split(".")[0]
+            # try:
                 cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
                 chr_ref = cur.fetchall()
                 # con.commit()
@@ -942,8 +944,14 @@ def update_db(con, id_container):
                     final_results += get_data(con, id_container[i][0], id_container[i][1],
                                             id_container[i][2], id_container[i][3],
                                             organism_col, ftp_lnk, organism_arr, chr_ref)
-            except:
-                print("ERROR IN update data function !!!!!!!!!!!!\n")    
+    
+    except KeyboardInterrupt:
+        print("ctrl c pressed !!!!!!!!!!!!!\n")
+        sys.exit(1)
+        if con:
+            con.close()
+    except:
+        print("ERROR IN update data function !!!!!!!!!!!!\n")    
     return final_results
 
 def find_srRNA_gene(args_accession, args_srRNA, id_container):
