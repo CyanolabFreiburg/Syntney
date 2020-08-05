@@ -402,10 +402,12 @@ def normalize_connections(rRNA_data, network):
     treelength = whole_tree_length(tree) # whole tree length
     values = []
     zeroweights = []  # stores connections with a weight of 0
+    
     for cluster in network:
         for connectedcluster in network[cluster][0]:
             accessions = network[cluster][0][connectedcluster][1]
             sob = sum_of_branches(tree, accessions, tree_iddict)
+            
             if treelength == 0:
                 value = 1
             else:
@@ -416,6 +418,7 @@ def normalize_connections(rRNA_data, network):
                 network[cluster][0][connectedcluster][0] = value
             if value == 0:
                 zeroweights.append([cluster, connectedcluster])
+    
     if len(values) > 0:
         minimum = min(values)
     else:
