@@ -18,3 +18,5 @@ dependencies:
   - cytoscape 
   - cd-hit
   - ete3
+  - quicktree
+  - clustalo

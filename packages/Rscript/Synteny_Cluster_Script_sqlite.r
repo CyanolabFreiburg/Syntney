@@ -9,10 +9,10 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/inputForJens.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new.db
 
 
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/candidates.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py db_path=~/Syntney/synt.db
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/synt.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/Spot42_short.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/synt.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42_short.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/synt.db
 
-#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Syntney/testfiles/Spot42.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/ -n cys -r off -d ~/media/Syntney/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 Syntney.py -i ./testfiles/sRNA.fasta  -o ~/Syntney_db/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
@@ -76,6 +76,40 @@ rRNA_existence_threshold<-as.numeric(rRNA_existence_threshold)
 	# out
 # }
 
+# split_glassgo<-function(x){
+	# tmp<-strsplit(x[1], ">")[[1]]
+	# if(length(tmp)>2){
+		# tmp2<-strsplit(tmp[length(tmp)],"p.c.VAL:")[[1]]
+		# tmp2<-gsub(";.*","",tmp2[length(tmp2)])
+		# tmp<-paste(tmp[2], "p.c.VAL:", tmp2[length(tmp2)], sep="")
+	# }else {
+			# tmp<-tmp[2]
+		# }
+	# tmp<-strsplit(tmp, ":")[[1]]
+	# id<-tmp[1]
+	# taxid<-tmp[length(tmp)]
+	# identity<-strsplit(tmp[length(tmp)-1],"-taxID")[[1]][1]
+	# tmp2<-strsplit(tmp[2]," ")[[1]]
+	# tmp3<-paste(tmp2[2:(length(tmp2)-1)],collapse=" ")
+	# name<-strsplit(tmp3,",")[[1]][1]
+	# tmp2<-strsplit(tmp2,"-")[[1]]
+	# a<-tmp2[1]
+	# b<-as.numeric(tmp2[2])
+	# a<-strsplit(a,"c")[[1]]
+	# strand<-"+"
+	# a<-as.numeric(a[length(a)])
+	# if(b<a){
+		# st<-b
+		# en<-a
+		# strand<-"-"
+	# }else{
+		# st<-a
+		# en<-b
+	# }
+	# out<-c(id, strand, st,en,name)
+	# out
+# }
+
 split_glassgo<-function(x){
 	tmp<-strsplit(x[1], ">")[[1]]
 	if(length(tmp)>2){
@@ -85,7 +119,13 @@ split_glassgo<-function(x){
 	}else {
 			tmp<-tmp[2]
 		}
-	tmp<-strsplit(tmp, ":")[[1]]
+	rfam<-grep("[0123456789]/[0123456789]{1,}-[0123456789]",x)
+	if(length(rfam)>0){
+		tmp<-strsplit(tmp, "/")[[1]]
+	} else {
+		tmp<-strsplit(tmp, ":")[[1]]
+	}
+	
 	id<-tmp[1]
 	taxid<-tmp[length(tmp)]
 	identity<-strsplit(tmp[length(tmp)-1],"-taxID")[[1]][1]
