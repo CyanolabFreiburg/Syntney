@@ -19,6 +19,7 @@ import tempfile
 import io
 import warnings
 from collections import defaultdict
+# import time
 
 information = """
 Determines the 16sRNA for provided organism and stores
@@ -101,8 +102,9 @@ def seq_check_db(con, organism, dna_file):
         cursor.execute("SELECT acc From genome_dna WHERE acc=? AND [16sRNA] \
                     IS NULL",
                        (organism,))
-        con.commit()
+        
         organism_in_table = cursor.fetchall()
+        con.commit()
 
     if organism_in_table:
         flag = True
@@ -112,8 +114,8 @@ def seq_check_db(con, organism, dna_file):
     else:
         cursor.execute("SELECT acc From genome_dna WHERE acc=?",
                        (organism,))
-        con.commit()  # committing changes to database
         organism_in_table = cursor.fetchall()
+        con.commit()  # committing changes to database
         # con.close()  # closing database connection
         if organism_in_table:
             print("16sRNA already exist for", organism)
@@ -143,41 +145,66 @@ def execute_barrbap(organism, dna_file):
 
 def hamming_distance(seq1, seq2):
     dist_counter = 0
+    seq_len = 0
+    diff_len = 0
     if seq2 == seq1:
+        # print("BOTH SEQ ARE EQUAL !!!!!!!!!!!\n")
         dist_counter = 0
     else:
-        for n in range(len(seq1)):
+        # print("ELSE len of seq1", len(seq1), len(seq2))
+        if len(seq1) ==  len(seq2):
+            seq_len = len(seq1)
+            for n in range(seq_len):
             # print(n)
-            if seq1[n] != seq2[n]:
-                dist_counter += 1
+                if seq1[n] != seq2[n]:
+                    dist_counter += 1
+        else:
+            if len(seq1) > len(seq2):
+                seq_len = len(seq2)
+                diff_len = len(seq1) - len(seq2)
+            else:
+                seq_len = len(seq1)
+                diff_len = len(seq2) - len(seq1)
+            for n in range(seq_len):
+            # print(n)
+                if seq1[n] != seq2[n]:
+                    dist_counter += 1
+            dist_counter += diff_len
     return dist_counter
 
 
 def matrix_fill(dim, arr, sequences):
     try:
+        # print(dim)
         for i in range(dim):
-            # print(i)
+            # print("i : ", i)
             if i < dim:
                 for j in range(dim):
+                    # print("i + j < dim: ", i + j < dim)
                     if i + j < dim:
                         # print(sequences[i], ":", sequences[i + j] )
                         hamm_dist = hamming_distance(sequences[i],
                                                     sequences[i + j])
+                        # print("hammding distance: ", hamm_dist)
                         arr[i, i + j] = hamm_dist
                         arr[i + j, i] = hamm_dist
+        # print(arr)
         return arr
     except:
         return '0'
+    # return arr
 
-def sumColumn(dim, matrix, column):
+def sumColumn(dim, matrix_nd, column):
     total = 0
+    # print(dim, column)
+    # print(matrix_nd)    
     for row in range(dim):
-        total += matrix[row][column]
-
+        total += matrix_nd[row][column]
+    # print("total :" , total)
     return total
 
 
-def insert_db(con, organism, dna_seq, consensus_seq, chr_ref, ncbi_file_path):
+def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
     """Insert record into SqliteDB"""
     # print("Insert record into SqliteDB")
     refseq_id = ""
@@ -189,32 +216,49 @@ def insert_db(con, organism, dna_seq, consensus_seq, chr_ref, ncbi_file_path):
     cursor = con.cursor()
     cursor.execute("SELECT genome_dna.[16sRNA_Ref], [16sRNA].acc FROM genome_dna, [16sRNA] WHERE genome_dna.[16sRNA_Ref]=?1 AND [16sRNA].acc=?1", (chr_ref,))
     data = cursor.fetchall()
+    con.commit()
     # print("data : ", (data))
     if len(data) == 0:
         cursor.execute("""INSERT into [16sRNA](acc, [16sRNA_Seq])
                     VALUES(?,?)""", (organism, consensus_seq))
+        con.commit()                
 
     cursor.execute("""INSERT into genome_dna(acc, refseq, dna, [16sRNA_Ref])
                 VALUES(?,?,?,?)""", (organism, refseq_id, dna_seq, chr_ref))
-
+    con.commit()
 
 def consensus_sequence(dim, sequences, sequences_dict, keys):
     # an emtpy matrix created
+    consensus_seq = ''
+    sum_of_columns = []
     arr = np.zeros((dim, dim), dtype=int)
+    # print("array before fill : ", arr)
+    # print("parameter to matrix-fill are dim, arr, sequences", dim, len(arr), len(sequences))
     arr = matrix_fill(dim, arr, sequences)
+    # print("arr : ", arr)
     # added to deal with the warning raises due to below comparison
     warnings.simplefilter(action='ignore', category=FutureWarning)
-    if arr == '0':
-        return sequences[0]
+    # print(type(arr[0][1]), arr[0][1])
+    array_data = np.all((arr == 0), axis=1)
+    # print("array_data", array_data)
+    # print("sequences[0] : ", sequences[0])
+    if np.all(array_data):
+        # print(" its a zero matrix !!!!!!!!!!!\n")
+        consensus_seq =  sequences[0]
     else:
+        # print("else called for sum of column")
+        # print(arr)
         for column in range(dim):
             sum_of_columns.append(sumColumn(dim, arr, column))
 
         # consensus sequence index and sequence
+        # print("sum of columns :" , sum_of_columns)
         consensus_seq_indx = sum_of_columns.index(min(sum_of_columns))
         consensus_seq = sequences_dict[keys[consensus_seq_indx]]
-
-        return consensus_seq
+        # print("sum of columns index :" , consensus_seq_indx)
+    
+    # print(consensus_seq)
+    return consensus_seq
 
 
 def md5(fname):
@@ -288,7 +332,7 @@ def init_sqlite_db(db_path):
     return 0
 
 
-def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag, ncbi_file_path):
+def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
     """
     1 - check if genbank is a file or folder and download file if the data
     is not in the db
@@ -296,204 +340,235 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag, ncbi_file_path):
     state = ""
     dna_seq = ""
     consensus_seq = ""
-    # print("Fayyaz INSERT_GENBANK function is called !!!!!!!!!!!\n")
-    # print("genbank, con, user_acc, chr_ref, chr_flag : ", genbank, con, user_acc, chr_ref, chr_flag)
+    file_arr = []
+    # print("args.sqlite in insert genbank", args.sqlite)
+    # con = lite.connect(args.sqlite)
     if os.path.isfile(genbank):
-        file_arr = glob.glob(genbank)
+            file_arr = glob.glob(genbank)
     if os.path.isdir(genbank):
         genbank = str(genbank) + "*"
         file_arr = glob.glob(genbank)
-    cur = con.cursor()
-    # print(file_arr)
-    user_acc_flag = False
-    for tmp_path in file_arr:
-        # print("temp_Path: " + tmp_path)
-        for gb_record in SeqIO.parse(open(tmp_path, "r"), "genbank"):
-            # print("gb_record.id: " + gb_record.id)
-            # check if record exists. If, then take the next entry
-            cur.execute("SELECT acc FROM proteins WHERE acc=?",
-                        (gb_record.id,))
-            data = cur.fetchall()
-            # print(data)
-            # print("gb_record.name:", gb_record.name)
-            # print("gb_record.desc:", gb_record.description)
-            gb_record_desc = gb_record.description
-            # print(type(gb_record_desc))
-            # if not "plasmids" in gb_record_desc:
-                # print("YES PLASMID FOUND !!!!!!!!!!!!!!\n")
+    with con:
+        # print("Fayyaz INSERT_GENBANK function is called !!!!!!!!!!!\n")
+        # print("genbank, con, user_acc, chr_ref, chr_flag : ", genbank, con, user_acc, chr_ref, chr_flag)
+        # print("file_arr : ", file_arr)
+        cur = con.cursor()
+        # print(file_arr)
+        user_acc_flag = False
+        try:
 
-            # if not "plasmid" in gb_record_desc:
-                # print("NOT PLASMID FOUND !!!!!!!!!!!!!!\n")
-            # if not "plasmid" in gb_record.description: # or not "contigs" in gb_record.description or not "scaffold" in gb_record.description:
-            #     chr_ref = gb_record.id
-                # print("\nITS IS NOT A PLASMID !!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-            if len(data) != 0:
-                state += str(gb_record.id) + " - exists!\n"
-                # Fayyaz to make compatible both naming conventions referring to same gbk
-                # only name difference.
-                # print("chr_flag, organism_col : ", chr_flag, user_acc, gb_record.id)
-                if user_acc in gb_record.id:
-                    # print("user acc and gb record", user_acc, gb_record.id)
-                    user_acc = str(gb_record.id)
-                # print(state)
-                continue
-
-            rows_genbank = list()
-            rows_proteins = list()
-            rows_genome_dna = list()
-            # todo not well implemented yet
-            rows_genbank.append((gb_record.id, 1, 2, 3, "foo"))
-            gb_id = (gb_record.id).strip().split(".")[0]
-
-            # print("gb_id == user_acc, gb_id, user_acc: ",  gb_id == user_acc, gb_id, user_acc)
-            # print(gb_id == chr_ref.split(".")[0], gb_id, chr_ref.split(".")[0]  )
-
-            # if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
-            if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
-                user_acc_flag = True
-                # get data from genbank and rearrange the structure
-                for entry in gb_record.features:
-                    if entry.type == "CDS" and ("translation" in entry.qualifiers):
-                        location = entry.location
-                        # check if location is unfinished -> [<0:687](-)
-                        # or 7251..>7537
-                        if len(re.findall("(<|>)", str(location))) == 0:
-                            # multiple hits for the same sequence
-                            if str(location).startswith("join"):
-                                locs = re.findall("{(.*?)}", str(location))[0]
-                                locs_arr = locs.split(",")
-                                # number of coordinates
-                                for coords in locs_arr:
-                                    start, end, ori = extract_coordinates(coords)
-                                    seq = zlib.compress(
-                                        entry.qualifiers["translation"][0].
-                                        encode('utf-8'))
-
-                                    if "locus_tag" in entry.qualifiers:
-                                        gene_loc = entry.qualifiers["locus_tag"][0]
-                                    else:
-                                        gene_loc = "na"
-                                    if "gene" in entry.qualifiers:
-                                        gene = entry.qualifiers["gene"][0]
-                                    else:
-                                        gene = "na"
-
-                                    rows_proteins.append([gb_record.id, gene_loc,
-                                                        gene, start, end,
-                                                        ori, seq])
-                            else:
-                                start, end, ori = extract_coordinates(location)
-                                seq = zlib.compress(
-                                    entry.qualifiers["translation"][0].
-                                    encode('utf-8'))
-
-                                if "locus_tag" in entry.qualifiers:
-                                    gene_loc = entry.qualifiers["locus_tag"][0]
-                                else:
-                                    gene_loc = "na"
-                                if "gene" in entry.qualifiers:
-                                    gene = entry.qualifiers["gene"][0]
-                                else:
-                                    gene = "na"
-
-                                rows_proteins.append([gb_record.id, gene_loc, gene,
-                                                    start, end, ori, seq])
-
-                if len(str(gb_record.seq)) > 0:
-                    # creates a temporary file starting with name of organism
-                    temp_dna = tempfile.NamedTemporaryFile(prefix=gb_record.id,
-                                                        dir='./')
-
-                    # writes sequence along with its ID in DNA fasta format
-                    # encode converts sequence to byte like object
-                    # as required by temporary File
-                    temp_dna.write((">" + gb_record.id + "\n" +
-                                    str(gb_record.seq)).encode())
-
-                    # executes barrnap and returns the output file
-                    barrnap_out = execute_barrbap(gb_record.id, temp_dna.name)
-                    # makes dictionary of 16sRNA seq from barrnap output file
-                    if os.stat(barrnap_out).st_size != 0:
-                        sequences_dict = barrbap_dict_creation(barrnap_out)
-                    
-                        # remove the output files created by barrnap
-                        # os.system("rm -f " + str(gb_record.id) + "*.fai")
-                        # os.system("rm -f " + barrnap_out)
-
-                        # provides keys only in the dictionary
-                        keys = list(sequences_dict.keys())
-                        # extracts sequences from the dictionary
-                        sequences = list(sequences_dict.values())
-                        if keys != 0:
-                            chr_ref = gb_record.id
-                        # array dimensions [dim x dim]
-                        dim = len(keys)
-                        # checks if the detected 16sRNA sequences are two or less
-                        if dim > 2:
-                            """ If 16sRNA sequences are more than two then search for
-                            more similar to each other"""
-                            # print("detected 16sRNA are more than 2")
-                            # determines consensus sequences
-                            # print("sequence selection in progress !!!!")
-                            consensus_seq = consensus_sequence(dim, sequences,
-                                                            sequences_dict,
-                                                            keys)
-                            # print("sequence selected !!!!")
-                        elif dim == 2 or dim == 1:
-                            # print("\ndetected 16sRNA are 2 or less !!!!\n")
-                            consensus_seq = sequences[0]
-                        else:
-                            # print("continue")
-                            continue
-                    
-                        
-                    else:
-                        consensus_seq = "No 16sRNA sequence found"
-                        print("No 16sRNA sequence found")
-                    
-                    # remove the output files created by barrnap
-                    # os.system("rm -f " + str(gb_record.id) + "*.fai")
-                    # os.system("rm -f " + barrnap_out)
-
-                    # dna_seq is being encoded to save space i.e. BLOB entry in DB
-                    dna_seq = zlib.compress(str(gb_record.seq).encode('utf-8'))
-
-                    # insert organism id, dna and 16sRNA sequence.
-                    insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref, ncbi_file_path)
-                    # print("SqliteDB is successfuly updated !!!!\n")
-                    # remove the redundant/temp file
-                    # remove_file()
-
-                else:
-                    dna_seq = "na"
-                # print("rows_genome_dna:", gb_re?cord.id, dna_seq )
-                rows_genome_dna.append([gb_record.id, dna_seq])
-                # print(rows_genome_dna)
-                try:
-                    # cur.executemany("INSERT INTO genbank_generell
-                    # (acc, genes_total, cds_total, genome_size, circular_linear)
-                    # VALUES (?,?,?,?,?)", rows_genbank)
-                    cur.executemany("""INSERT INTO proteins (acc, gen_locus,
-                                    gene_name, start_pos, end_pos, orientation,
-                                    sequence) VALUES (?,?,?,?,?,?,?)""",
-                                    rows_proteins)
-                    # cur.executemany("INSERT INTO genome_dna (acc, dna)
-                    # VALUES (?,?)", rows_genome_dna)
+            for tmp_path in file_arr:
+                # print("temp_Path: " + tmp_path)
+                for gb_record in SeqIO.parse(open(tmp_path, "r"), "genbank"):
+                    # print("gb_record.id: " + gb_record.id)
+                    # check if record exists. If, then take the next entry
+                    cur.execute("SELECT acc FROM proteins WHERE acc=?",
+                                (gb_record.id,))
+                    data = cur.fetchall()
                     con.commit()
-                except con.IntegrityError:
-                    sys.stderr.write("ERROR: ID already exists in PRIMARY KEY\
-                                    column " + str(con.IntegrityError) + "\n")
-                    continue
-    # print(user_acc, chr_ref)
+                    # print(data)
+                    # print("gb_record.name:", gb_record.name)
+                    # print("gb_record.desc:", gb_record.description)
+                    gb_record_desc = gb_record.description
+                    # print(type(gb_record_desc))
+                    # if not "plasmids" in gb_record_desc:
+                        # print("YES PLASMID FOUND !!!!!!!!!!!!!!\n")
+
+                    # if not "plasmid" in gb_record_desc:
+                        # print("NOT PLASMID FOUND !!!!!!!!!!!!!!\n")
+                    # if not "plasmid" in gb_record.description: # or not "contigs" in gb_record.description or not "scaffold" in gb_record.description:
+                    #     chr_ref = gb_record.id
+                        # print("\nITS IS NOT A PLASMID !!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+                    if len(data) != 0:
+                        state += str(gb_record.id) + " - exists!\n"
+                        # Fayyaz to make compatible both naming conventions referring to same gbk
+                        # only name difference.
+                        # print("chr_flag, organism_col : ", chr_flag, user_acc, gb_record.id)
+                        if user_acc in gb_record.id:
+                            # print("user acc and gb record", user_acc, gb_record.id)
+                            user_acc = str(gb_record.id)
+                        # print(state)
+                        continue
+
+                    rows_genbank = list()
+                    rows_proteins = list()
+                    rows_genome_dna = list()
+                    # todo not well implemented yet
+                    rows_genbank.append((gb_record.id, 1, 2, 3, "foo"))
+                    gb_id = (gb_record.id).strip().split(".")[0]
+
+                    # print("gb_id == user_acc, gb_id, user_acc: ",  gb_id == user_acc, gb_id, user_acc)
+                    # print(gb_id == chr_ref.split(".")[0], gb_id, chr_ref.split(".")[0]  )
+
+                    # if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
+                    if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
+                        user_acc_flag = True
+                        # get data from genbank and rearrange the structure
+                        for entry in gb_record.features:
+                            if entry.type == "CDS" and ("translation" in entry.qualifiers):
+                                location = entry.location
+                                # check if location is unfinished -> [<0:687](-)
+                                # or 7251..>7537
+                                if len(re.findall("(<|>)", str(location))) == 0:
+                                    # multiple hits for the same sequence
+                                    if str(location).startswith("join"):
+                                        locs = re.findall("{(.*?)}", str(location))[0]
+                                        locs_arr = locs.split(",")
+                                        # number of coordinates
+                                        for coords in locs_arr:
+                                            start, end, ori = extract_coordinates(coords)
+                                            seq = zlib.compress(
+                                                entry.qualifiers["translation"][0].
+                                                encode('utf-8'))
+
+                                            if "locus_tag" in entry.qualifiers:
+                                                gene_loc = entry.qualifiers["locus_tag"][0]
+                                            else:
+                                                gene_loc = "na"
+                                            if "gene" in entry.qualifiers:
+                                                gene = entry.qualifiers["gene"][0]
+                                            else:
+                                                gene = "na"
+
+                                            rows_proteins.append([gb_record.id, gene_loc,
+                                                                gene, start, end,
+                                                                ori, seq])
+                                    else:
+                                        start, end, ori = extract_coordinates(location)
+                                        seq = zlib.compress(
+                                            entry.qualifiers["translation"][0].
+                                            encode('utf-8'))
+
+                                        if "locus_tag" in entry.qualifiers:
+                                            gene_loc = entry.qualifiers["locus_tag"][0]
+                                        else:
+                                            gene_loc = "na"
+                                        if "gene" in entry.qualifiers:
+                                            gene = entry.qualifiers["gene"][0]
+                                        else:
+                                            gene = "na"
+
+                                        rows_proteins.append([gb_record.id, gene_loc, gene,
+                                                            start, end, ori, seq])
+                        try:
+
+                            if len(str(gb_record.seq)) > 0:
+                                # print("len(str(gb_record.seq)) :", len(str(gb_record.seq)))
+                                # creates a temporary file starting with name of organism
+                                temp_dna = tempfile.NamedTemporaryFile(prefix=gb_record.id,
+                                                                    dir='./')
+
+                                # writes sequence along with its ID in DNA fasta format
+                                # encode converts sequence to byte like object
+                                # as required by temporary File
+                                temp_dna.write((">" + gb_record.id + "\n" +
+                                                str(gb_record.seq)).encode())
+
+                                # executes barrnap and returns the output file
+                                barrnap_out = execute_barrbap(gb_record.id, temp_dna.name)
+                                # makes dictionary of 16sRNA seq from barrnap output file
+                                # print("after barrnap results: does it have some data or not:", os.stat(barrnap_out).st_size != 0)
+                                if os.stat(barrnap_out).st_size != 0:
+                                    sequences_dict = barrbap_dict_creation(barrnap_out)
+                                
+                                    # remove the output files created by barrnap
+                                    # os.system("rm -f " + str(gb_record.id) + "*.fai")
+                                    # os.system("rm -f " + barrnap_out)
+
+                                    # provides keys only in the dictionary
+                                    keys = list(sequences_dict.keys())
+                                    # extracts sequences from the dictionary
+                                    sequences = list(sequences_dict.values())
+                                    # print("keys are after barrnap execution : ", keys, len(keys), keys != [] )
+                                    # earlier below was keys != 0:
+                                    if keys != []:
+                                        chr_ref = gb_record.id
+                                    # array dimensions [dim x dim]
+                                    dim = len(keys)
+                                    # print("dimensions : ", dim)
+                                    # checks if the detected 16sRNA sequences are two or less
+                                    if dim > 2:
+                                        """ If 16sRNA sequences are more than two then search for
+                                        more similar to each other"""
+                                        # print("detected 16sRNA are more than 2")
+                                        # determines consensus sequences
+                                        # print("sequence selection in progress !!!!")
+                                        consensus_seq = consensus_sequence(dim, sequences,
+                                                                        sequences_dict,
+                                                                        keys)
+                                        # print("sequence selected !!!!")
+                                    elif dim == 2 or dim == 1:
+                                        # print("\ndetected 16sRNA are 2 or less !!!!\n")
+                                        consensus_seq = sequences[0]
+                                    # else:
+                                        # print("continue")
+                                        # continue
+                                
+                                    
+                                else:
+                                    consensus_seq = "No 16sRNA sequence found"
+                                    # print("No 16sRNA sequence found")
+                                
+                                # remove the output files created by barrnap
+                                # os.system("rm -f " + str(gb_record.id) + "*.fai")
+                                # os.system("rm -f " + barrnap_out)
+                                # time.sleep(3)
+                                
+                                # dna_seq is being encoded to save space i.e. BLOB entry in DB
+                                dna_seq = zlib.compress(str(gb_record.seq).encode('utf-8'))
+
+                                # insert organism id, dna and 16sRNA sequence.
+                                # print("input to insert_db: ", con)
+                                # print("input to insert_db: ", gb_record.id)
+                                # print("input to insert_db: ", consensus_seq)
+                                # print("input to insert_db: ", chr_ref)
+                                insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
+                                # print("SqliteDB is successfuly updated !!!!\n")
+                                # remove the redundant/temp file
+                                # remove_file()
+
+                            else:
+                                dna_seq = "NA"
+                                consensus_seq = "NA"
+                                chr_ref = "NA"
+                                print("ELSE STATEMENT CALLED !!!!!!!!!\n")
+                                insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
+                            # print("rows_genome_dna:", gb_re?cord.id, dna_seq )
+                            rows_genome_dna.append([gb_record.id, dna_seq])
+                            # print(rows_genome_dna)
+                            try:
+                                # cur.executemany("INSERT INTO genbank_generell
+                                # (acc, genes_total, cds_total, genome_size, circular_linear)
+                                # VALUES (?,?,?,?,?)", rows_genbank)
+                                cur.executemany("""INSERT INTO proteins (acc, gen_locus,
+                                                gene_name, start_pos, end_pos, orientation,
+                                                sequence) VALUES (?,?,?,?,?,?,?)""",
+                                                rows_proteins)
+                                # cur.executemany("INSERT INTO genome_dna (acc, dna)
+                                # VALUES (?,?)", rows_genome_dna)
+                                con.commit()
+                            except con.IntegrityError:
+                                sys.stderr.write("ERROR: ID already exists in PRIMARY KEY\
+                                                column " + str(con.IntegrityError) + "\n")
+                                continue
+                        except:
+                            print("len(str(gb_record.seq)) in exception:" , len(str(gb_record.seq)))
+                            print("something went wrong with extraction of data")
+            # print(user_acc, chr_ref)
+        
+        except:
+            print("ERROR in extraction and insertion of data")
     os.system("rm -f *.fai barrnap.*")
     return user_acc, chr_ref
 
 
-def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag, ncbi_file_path):
+def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag):
     ts = calendar.timegm(time.gmtime())
-    tmp_download_path = "./" + str(ts) + "_TMP"
+    tmp_download_path = os.getcwd() + "/" + str(ts) + "_TMP"
     os.makedirs(tmp_download_path)
-
+    # print("tmp_download_path : ", tmp_download_path, "\n")
+    # con = lite.connect(args.sqlite)
+    # with con:
     try:
         if flag:
             os.system("wget -c --retry-connrefused -nv --show-progress --continue\
@@ -501,19 +576,18 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag, ncbi_fil
                     str(ftp_lnk.strip()) + " -P " +
                     str(tmp_download_path))
 
-            file_path = str(
-                            tmp_download_path) + "/" + \
+            file_path = str(tmp_download_path) + "/" + \
                             str(ftp_lnk.split('/')[-1])
             # uncompress downloaded *.gz file
             inF = gzip.open(file_path, 'rb')
             uncompressed_gb = str(file_path) + ".dec"
+            # print("uncompressed_gb:", uncompressed_gb)
             outF = open(uncompressed_gb, 'wb')
             outF.write(inF.read())
             inF.close()
             outF.close()
-            
             # integrate data into user's db
-            user_acc, gb_id = insert_genbank(uncompressed_gb, con, user_acc, chr_ref, chr_flag, ncbi_file_path)
+            user_acc, gb_id = insert_genbank(uncompressed_gb, con, user_acc, chr_ref, chr_flag)
         else:
             # print(flag)
             org_link = '"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=' + user_acc + '&rettype=gbwithparts&retmode=text"'
@@ -529,124 +603,140 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag, ncbi_fil
             chr_flag = "NA"
             chr_ref = "NA"
             organism_col = "NA"
-            user_acc, gb_id = insert_genbank(download_path, con, user_acc, chr_ref, chr_flag, ncbi_file_path )
+            # print("ncbi_file_path in gbk: ", ncbi_file_path)
+            user_acc, gb_id = insert_genbank(download_path, con, user_acc, chr_ref, chr_flag)
 
         # clean tmp_download_path
         # print("tmp delete !!!!!!!!!!\n")
+        # print("tmp_download_path", tmp_download_path)
         shutil.rmtree(tmp_download_path)
 
         return user_acc, gb_id
 
     except:
+        # error_list.append(user_acc)
         sys.stderr.write("***FTP/HTTP ERROR: " + user_acc +
-                         " CANNOT BE DOWNLOADED! ***")
+                        " CANNOT BE DOWNLOADED! ***")
+        # print(error_list)
         # fayyaz undo comments below
         shutil.rmtree(tmp_download_path)
 
 
-def get_data(conn, user_id, user_acc, user_center,
-             user_range, organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path):
+def get_data(con, user_id, user_acc, user_center,
+             user_range, organism_col, ftp_lnk, organism_arr, chr_ref):
     results = ""
-    cur = conn.cursor()
-    left_corner = int(user_center) - int(user_range)
-    if left_corner < 0:
-        left_corner = 0
-    right_corner = int(user_center) + int(user_range)
+    # con = lite.connect(args.sqlite)
+    # print("con in get_data", con)
+    with con:
+        cur = con.cursor()
+        left_corner = int(user_center) - int(user_range)
+        if left_corner < 0:
+            left_corner = 0
+        right_corner = int(user_center) + int(user_range)
 
-    try:
-        # Fayyaz acc instead of * to save memory
-        user_acc = user_acc.strip().split(".")[0]
-        chr_id = chr_ref.strip().split(".")[0]
-        # print("user_acc, chr_id: ",  user_acc, chr_id)
-        cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ? OR acc LIKE ?", (user_acc + '._%', chr_id + '._%'))
-        rows = cur.fetchall()
-        print()
-        user_flag = False
-        chr_flag = False
-        gb_id = 'NA'
-        if len(rows) != 0:
-            # print("lenght is not zero !!!!!!!!!! \n")
-            for line in range(len(rows)):
-                if user_acc in rows[line][0]:
-                    user_flag = True
-                    # print("in line: ", line)
-                elif chr_id in rows[line][0]:
-                    chr_flag = True
-                    # print("else", line)
-        if not chr_flag or not user_flag:
-            if user_acc in organism_col:
-                flag = True
-                # print("before get_data_From_ncbi: ", ftp_lnk, chr_ref, user_acc, conn, flag, chr_flag)
-                user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, conn, flag, chr_flag, ncbi_file_path)
-                rows = [1]
-                user_acc = user_acc.strip().split(".")[0]
+        try:
+            # Fayyaz acc instead of * to save memory
+            user_acc = user_acc.strip().split(".")[0]
+            chr_id = chr_ref.strip().split(".")[0]
+            # print("user_acc, chr_id: ",  user_acc, chr_id)
 
-                # cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                            # (start_pos<=?3 and end_pos>=?4) or acc LIKE ?2 and 
-                            # (start_pos<=?3 and end_pos>=?4)""",
-                            # (user_acc + '._%',  gb_id, right_corner, left_corner))
-                cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                            (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
-                            (start_pos<=?3 and end_pos>=?4)""",
-                            (user_acc + '._%',  gb_id, right_corner, left_corner))
-                rows = cur.fetchall()
-                if len(rows) == 0:
-                    results += str(user_id) + "\t" + str(user_acc) + "\t" \
-                                + "no annotation" + "\t" + "no annotation" \
-                                "\t" + "no annotation" + "\t" + "no annotation" \
-                                + "\t" + "no annotation" + "\t" + "no annotation" \
-                                + "\n"
+            # Fayyaz, please check if this needed anymore !!!!!!!!!!!
+            cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ? OR acc LIKE ?", (user_acc + '._%', chr_id + '._%'))
+            rows = cur.fetchall()
+            con.commit()
+            # print("rows :::", rows)
+            print()
+            user_flag = False
+            chr_flag = False
+            gb_id = 'NA'
+            if len(rows) != 0:
+                # print("lenght is not zero !!!!!!!!!! \n")
+                for line in range(len(rows)):
+                    if user_acc in rows[line][0]:
+                        user_flag = True
+                        # print("in line: ", line)
+                    elif chr_id in rows[line][0]:
+                        chr_flag = True
+                        # print("else", line)
+            if not chr_flag or not user_flag:
+                if user_acc in organism_col:
+                    flag = True
+                    # print("before get_data_From_ncbi: ", ftp_lnk, chr_ref, user_acc, con, flag, chr_flag, "\n")
+                    user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag)
+                    rows = [1]
+                    user_acc = user_acc.strip().split(".")[0]
+
+                    # cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
+                                # (start_pos<=?3 and end_pos>=?4) or acc LIKE ?2 and 
+                                # (start_pos<=?3 and end_pos>=?4)""",
+                                # (user_acc + '._%',  gb_id, right_corner, left_corner))
+                    cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
+                                (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
+                                (start_pos<=?3 and end_pos>=?4)""",
+                                (user_acc + '._%',  gb_id, right_corner, left_corner))
+                    rows = cur.fetchall()
+                    con.commit()
+                    if len(rows) == 0:
+                        results += str(user_id) + "\t" + str(user_acc) + "\t" \
+                                    + "no annotation" + "\t" + "no annotation" \
+                                    "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\n"
+                    else:
+                        for row in rows:
+                            # DESCRIPTION => row[0]=unique_number row[1]=acc
+                            # row[2]=locus_name row[3]=gene_name row[4]=start_pos
+                            # row[5]=end_pos row[6]=ori row[7]=protein_seq
+                            results += str(user_id) + "\t" + str(row[1]) + "\t" + \
+                                    str(row[3]) + "\t" + str(row[2]) + "\t" + \
+                                    str(row[4]) + "\t" + str(row[5]) + "\t" + \
+                                    str(row[6]) + "\t" + \
+                                    str(zlib.decompress(row[7]).decode('utf-8') + \
+                                    "\n")
+                # Fayyaz added to deal with organism not in the lookup file
                 else:
-                    for row in rows:
-                        # DESCRIPTION => row[0]=unique_number row[1]=acc
-                        # row[2]=locus_name row[3]=gene_name row[4]=start_pos
-                        # row[5]=end_pos row[6]=ori row[7]=protein_seq
-                        results += str(user_id) + "\t" + str(row[1]) + "\t" + \
-                                str(row[3]) + "\t" + str(row[2]) + "\t" + \
-                                str(row[4]) + "\t" + str(row[5]) + "\t" + \
-                                str(row[6]) + "\t" + \
-                                str(zlib.decompress(row[7]).decode('utf-8') + \
-                                "\n")
-            # Fayyaz added to deal with organism not in the lookup file
-            else:
-                flag = False
-                chr_ref =  user_acc
-                organism_col = user_acc
-                ftp_lnk = 'NA'
-                chr_flag = "NA"
-                # print(organism_col,ftp_lnk, chr_ref, user_acc, flag)
-                user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, conn, flag, chr_flag, ncbi_file_path)
+                    flag = False
+                    chr_ref =  user_acc
+                    organism_col = user_acc
+                    ftp_lnk = 'NA'
+                    chr_flag = "NA"
+                    # print(organism_col,ftp_lnk, chr_ref, user_acc, flag)
+                    user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag)
 
-                # Fayyaz added to show results when organism downloaded from ncbi directly.
-                user_acc = user_acc.strip().split(".")[0]
-                cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                            (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
-                            (start_pos<=?3 and end_pos>=?4)""",
-                            (user_acc + '._%',  gb_id, right_corner, left_corner))
-                rows = cur.fetchall()
-                if len(rows) == 0:
-                    results += str(user_id) + "\t" + str(user_acc) + "\t" \
-                                + "no annotation" + "\t" + "no annotation" \
-                                "\t" + "no annotation" + "\t" + "no annotation" \
-                                + "\t" + "no annotation" + "\t" + "no annotation" \
-                                + "\n"
-                else:
-                    for row in rows:
-                        # DESCRIPTION => row[0]=unique_number row[1]=acc
-                        # row[2]=locus_name row[3]=gene_name row[4]=start_pos
-                        # row[5]=end_pos row[6]=ori row[7]=protein_seq
-                        results += str(user_id) + "\t" + str(row[1]) + "\t" + \
-                                str(row[3]) + "\t" + str(row[2]) + "\t" + \
-                                str(row[4]) + "\t" + str(row[5]) + "\t" + \
-                                str(row[6]) + "\t" + \
-                                str(zlib.decompress(row[7]).decode('utf-8') + \
-                                "\n")
+                    # Fayyaz added to show results when organism downloaded from ncbi directly.
+                    user_acc = user_acc.strip().split(".")[0]
+                    cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
+                                (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
+                                (start_pos<=?3 and end_pos>=?4)""",
+                                (user_acc + '._%',  gb_id, right_corner, left_corner))
+                    rows = cur.fetchall()
+                    con.commit()
+                    if len(rows) == 0:
+                        results += str(user_id) + "\t" + str(user_acc) + "\t" \
+                                    + "no annotation" + "\t" + "no annotation" \
+                                    "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\n"
+                    else:
+                        for row in rows:
+                            # DESCRIPTION => row[0]=unique_number row[1]=acc
+                            # row[2]=locus_name row[3]=gene_name row[4]=start_pos
+                            # row[5]=end_pos row[6]=ori row[7]=protein_seq
+                            results += str(user_id) + "\t" + str(row[1]) + "\t" + \
+                                    str(row[3]) + "\t" + str(row[2]) + "\t" + \
+                                    str(row[4]) + "\t" + str(row[5]) + "\t" + \
+                                    str(row[6]) + "\t" + \
+                                    str(zlib.decompress(row[7]).decode('utf-8') + \
+                                    "\n")
 
-    except:
-        # entry not available
-        # todo check if exception can happen and document what's the reason for
-        results += str(user_id)
-    cur.close()
+        except:
+            # entry not available
+            # todo check if exception can happen and document what's the reason for
+            # results += str(user_id)
+            print("Exception in get_data () :", user_id)
+            # pass
+        # con.close()
+    # print("exception in get_data :", results)
     return results
 
 
@@ -754,7 +844,7 @@ def seq_extraction(dseq, positions, complement):
                 short_seq_all[name] = bases
     return short_seq_all
 
-def chrom_plas(ncbi_file_path, input_param):
+def chrom_plas(input_param):
     # User starts a search - check if the ACC is in the database or not.
     # If not, download the genbank from ncbi
     # print("opens the lookup table !!!!!!!!\n")
@@ -805,78 +895,117 @@ def chrom_plas(ncbi_file_path, input_param):
     return organism_col, ftp_lnk, organism_arr, chr_ref
 
 
-def update_db(con, id_container, args_accession):
+def update_db(con, id_container):
+    # print("id_container, args_accession: ", id_container, args_accession)
     final_results = ""
-    cur =  con.cursor()
-    for i in range(0, len(id_container)):
-        # print("len of len(id_container): ", len(id_container))
-        left_corner = int(id_container[i][2]) - int(id_container[i][3])
-        if left_corner < 0:
-            left_corner = 0
-        right_corner = int(id_container[i][2]) + int(id_container[i][3])
-        input_param = id_container[i][1].strip().split(".")[0]
-        cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-        chr_ref = cur.fetchall()
-        if chr_ref != []:
-            cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                        (start_pos<=?2 and end_pos>=?3)""",
-                        (input_param + '._%', right_corner, left_corner))
-            rows = cur.fetchall()
-            for row in rows:
-                    # DESCRIPTION => row[0]=unique_number row[1]=acc
-                    # row[2]=locus_name row[3]=gene_name row[4]=start_pos
-                    # row[5]=end_pos row[6]=ori row[7]=protein_seq
-                    final_results += str(id_container[i][0]) + "\t" + str(row[1]) + "\t" + \
-                            str(row[3]) + "\t" + str(row[2]) + "\t" + \
-                            str(row[4]) + "\t" + str(row[5]) + "\t" + \
-                            str(row[6]) + "\t" + \
-                            str(zlib.decompress(row[7]).decode('utf-8') + \
-                            "\n")
-        else:
-            organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
-            # print("fayaz !! conn," + id_container[i][0], id_container[i][1],
-                    # id_container[i][2], id_container[i][3], organism_col, ftp_lnk, organism_arr, chr_ref)
-            final_results += get_data(con, id_container[i][0], id_container[i][1],
-                                    id_container[i][2], id_container[i][3],
-                                    organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
+    # con = lite.connect(args.sqlite)
+    # print("id_container:", id_container)
+    # print("ncbi_file_path:", ncbi_file_path)
+    with con:
+        cur =  con.cursor()
+        for i in range(0, len(id_container)):
+            # print("len of len(id_container): ", len(id_container))
+            left_corner = int(id_container[i][2]) - int(id_container[i][3])
+            if left_corner < 0:
+                left_corner = 0
+            right_corner = int(id_container[i][2]) + int(id_container[i][3])
+            input_param = id_container[i][1].strip().split(".")[0]
+            try:
+                cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                chr_ref = cur.fetchall()
+                # con.commit()
+                # input_param = chr_ref[0][0]
+                # con.commit()
+                if chr_ref != []:
+                    # chr_ref[0][0] is an input_organism
+                    cur.execute("""SELECT * FROM proteins WHERE acc=?1 and
+                                (start_pos<=?2 and end_pos>=?3)""",
+                                (chr_ref[0][0], right_corner, left_corner))
+                    rows = cur.fetchall()
+                    con.commit()
+                    for row in rows:
+                            # DESCRIPTION => row[0]=unique_number row[1]=acc
+                            # row[2]=locus_name row[3]=gene_name row[4]=start_pos
+                            # row[5]=end_pos row[6]=ori row[7]=protein_seq
+                            final_results += str(id_container[i][0]) + "\t" + str(row[1]) + "\t" + \
+                                    str(row[3]) + "\t" + str(row[2]) + "\t" + \
+                                    str(row[4]) + "\t" + str(row[5]) + "\t" + \
+                                    str(row[6]) + "\t" + \
+                                    str(zlib.decompress(row[7]).decode('utf-8') + \
+                                    "\n")
+                else:
+                    organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
+                    # print("organism_col, ftp_lnk, organism_arr, chr_ref:", organism_col, ftp_lnk, organism_arr, chr_ref)
+                    # print("\nget_data parameters :",  con, id_container[i][0], id_container[i][1],
+                                            # id_container[i][2], id_container[i][3],
+                                            # organism_col, ftp_lnk, organism_arr, chr_ref)
+                    final_results += get_data(con, id_container[i][0], id_container[i][1],
+                                            id_container[i][2], id_container[i][3],
+                                            organism_col, ftp_lnk, organism_arr, chr_ref)
+            except:
+                print("ERROR IN update data function !!!!!!!!!!!!\n")    
     return final_results
 
 def find_srRNA_gene(args_accession, args_srRNA, id_container):
     # srRNA_flag = False
+    # print("FAYYAZ !!!!!!!!!!!!!!!!!\n")
+    print()
+    db_path = args.sqlite
+    # db_path = os.getcwd() + "/" + str(args.sqlite).strip(".")
+    # print("db_path", db_path)
+    # print("args.sqlite: ", args.sqlite)
     final_results = ''
-    con = lite.connect(args.sqlite)
-    cur = con.cursor()
     if args_srRNA:
-        for line in args_srRNA:
-            input_param = line.strip().split(".")[0]
-            cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-            chr_ref = cur.fetchall()
-            if chr_ref == []:
-                final_results = update_db(con, id_container, args_accession)
-        for line in args_srRNA:
-            input_param = line.strip().split(".")[0]
-            cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-            chr_ref = cur.fetchall()
-            if chr_ref != []:
-                if 'NA' in chr_ref[0][0]:
-                    print("No 16srRNA found !!!!!!!!!!!!!!\n")
-                else:
-                    cur.execute("SELECT * FROM [16sRNA] WHERE acc LIKE ?", (chr_ref[0][0],))
-                    rows = cur.fetchall()
-                    for i, line in enumerate(rows):
-                        print(">" + str(input_param))
-                        print(line[i+1])
+        con = lite.connect(db_path)
+        with con:
+            cur = con.cursor()
+            try:
+                for line in args_srRNA:
+                    input_param = line.strip().split(".")[0]
+                    print("input_param ", input_param, "!!!!!!!!!!!!!\n")
+                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                    chr_ref = cur.fetchall()
+                    con.commit()
+                    if chr_ref == []:
+                        print("input_param not found in DB ", input_param, " !!!!!!!1\n")
+                        for data in id_container:
+                            if input_param in data[1]:
+                                input_list = [data]
+                                # print("input_list: ", input_list, "!!!!!!!!!\n")
+                                final_results = update_db(con, input_list)
+                for line in args_srRNA:
+                    input_param = line.strip().split(".")[0]
+                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                    chr_ref = cur.fetchall()
+                    con.commit()
+                    if chr_ref != []:
+                        if 'NA' in chr_ref[0][0]:
+                            print(">" + str(input_param))
+                            print("No 16srRNA found !!!!!!!!!!!!!!\n")
+                        else:
+                            cur.execute("SELECT * FROM [16sRNA] WHERE acc LIKE ?", (chr_ref[0][0],))
+                            rows = cur.fetchall()
+                            con.commit()
+                            for i, line in enumerate(rows):
+                                print(">" + str(input_param))
+                                print(line[i+1])
+            except:
+                print("ERROR IN find_sRNA_gene function !!!!!!!!!!!\n")
+        con.close()
     elif args_accession:
-        final_results = update_db(con, id_container, args_accession)
-        if args.output != "":
-            # store data into file
-            handle = open(args.output, "w")
-            handle.write(final_results)
-            handle.close()
-        else:
-            print(final_results)
+        con = lite.connect(db_path)
+        with con:
+            final_results = update_db(con, id_container)
 
-    con.close()
+            if args.output != "":
+                # store data into file
+                handle = open(args.output, "w")
+                handle.write(final_results)
+                handle.close()
+            else:
+                print(final_results)
+
+        con.close()
 
 
 def input_check(input_param):
@@ -897,37 +1026,42 @@ def input_check(input_param):
 
 def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
     flag = False
-    con = lite.connect(args_sqlite)
-    cur = con.cursor()
-    dna_flag = False
+    # print(args_sqlite)
+    con = lite.connect(args.sqlite)
+    with con:
 
-    positions = defaultdict(list)
-    short_seq_all = dict()
-    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
+        cur = con.cursor()
+        dna_flag = False
 
-    with open(args_extDNA, 'r') as fr:
-        for line in fr:
-            id, start, stop, strand = line.split()
-            # print(id, start, stop, strand)
-            positions[id].append((int(start), int(stop), str(strand)))
-            input_param = line.strip().split(".") [0]
-            cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-            dseq = cur.fetchall()
-            # print(dseq)
-            if dseq != []:
-                # print("there is a sequence in DB")
-                short_seq_all = seq_extraction(dseq, positions, complement)
-            else:
-                final_results = ""
-                organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(ncbi_file_path, input_param)
-                # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
-                final_results += get_data(con, line[0], input_param,
-                                        int(args.position), int(args.range),
-                                        organism_col, ftp_lnk, organism_arr, chr_ref, ncbi_file_path)
+        positions = defaultdict(list)
+        short_seq_all = dict()
+        complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
+
+        with open(args_extDNA, 'r') as fr:
+            for line in fr:
+                id, start, stop, strand = line.split()
+                # print(id, start, stop, strand)
+                positions[id].append((int(start), int(stop), str(strand)))
+                input_param = line.strip().split(".") [0]
                 cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
                 dseq = cur.fetchall()
+                con.commit()
+                # print(dseq)
                 if dseq != []:
+                    # print("there is a sequence in DB")
                     short_seq_all = seq_extraction(dseq, positions, complement)
+                else:
+                    final_results = ""
+                    organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
+                    # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
+                    final_results += get_data(con, line[0], input_param,
+                                            int(args.position), int(args.range),
+                                            organism_col, ftp_lnk, organism_arr, chr_ref)
+                    cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                    dseq = cur.fetchall()
+                    con.commit()
+                    if dseq != []:
+                        short_seq_all = seq_extraction(dseq, positions, complement)
 
     print()
     for data in short_seq_all:
@@ -935,7 +1069,7 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
         print(short_seq_all[data])
 
     # close db connection
-    con.close()
+    # con.close()
 
 
 
@@ -991,8 +1125,8 @@ if __name__ == "__main__":
     if os.path.exists(org_name):
         # start pickle of data
         con = lite.connect(args.sqlite)
-        insert_genbank(org_name, con, org_name.strip().split(".")[0], org_name.strip().split(".")[0], 'FALSE', ncbi_file_path)
-        con.close()
+        insert_genbank(org_name, con, org_name.strip().split(".")[0], org_name.strip().split(".")[0], 'FALSE')
+        # con.close()
     # check if ncbi lookup-file needs to be updated or not!
     update_mode = args.update.split("-")
     
@@ -1071,6 +1205,7 @@ if __name__ == "__main__":
         sys.exit()
         
     if args.accession or args.srRNA:
+        # print("args.accession, args.srRNA", args.accession, args.srRNA)
         find_srRNA_gene(args.accession, args.srRNA, id_container )
 
     if args.extDNA:

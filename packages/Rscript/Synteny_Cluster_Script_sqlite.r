@@ -3,22 +3,23 @@
 # dependencies: 
 require(stringi)
 
-
+#genbank_groper_sqliteDB_ver00.py
 #CALL:
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/syntney.db < ~/media/jens@margarita/Syntney/Rfam_db.fasta
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/inputForJens.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new.db
 
 
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/Syntney/sRNA.fasta  synteny_window=3000 script_path=~/synt_test/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new4.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/candidates.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py db_path=~/Syntney/synt.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/candidates.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py db_path=~/Syntney/synt.db
 
 #	python3 ~/Syntney/Syntney.py -i ~/For_CopraRNA2.0/cooperationen/Elena_trpl/rnTrpL_glassgol.txt  -o ~/For_CopraRNA2.0/cooperationen/Elena_trpl/TMP/ -n cys -r off -d /media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-script_path<-"~/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
-script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
+script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
+script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
-db_path<-"~/Syntney/mySQLiteDB_new2.db"
+db_path<-"~/Syntney/synt.db"
 threads<-30
 name<-"sRNA"
 write_files<-F
@@ -41,6 +42,39 @@ threads<-as.numeric(threads)
 write_files<-as.logical(write_files)
 rRNA_existence_threshold<-as.numeric(rRNA_existence_threshold)
 
+# split_glassgo<-function(x){
+	# tmp<-strsplit(x[1], ">")[[1]]
+	# if(length(tmp)>2){
+		# tmp2<-strsplit(tmp[length(tmp)],"p.c.VAL:")[[1]]
+		# tmp2<-gsub(";.*","",tmp2[length(tmp2)])
+		# tmp<-paste(tmp[2], "p.c.VAL:", tmp2[length(tmp2)], sep="")
+	# }else {
+			# tmp<-tmp[2]
+		# }
+	# tmp<-strsplit(tmp, ":")[[1]]
+	# id<-tmp[1]
+	# taxid<-tmp[length(tmp)]
+	# identity<-strsplit(tmp[length(tmp)-1],"-taxID")[[1]][1]
+	# tmp2<-strsplit(tmp[2]," ")[[1]]
+	# tmp3<-paste(tmp2[2:(length(tmp2)-1)],collapse=" ")
+	# name<-strsplit(tmp3,",")[[1]][1]
+	# tmp2<-strsplit(tmp2,"-")[[1]]
+	# a<-tmp2[1]
+	# b<-tmp2[2]
+	# a<-strsplit(a,"c")[[1]]
+	# strand<-"+"
+	# if(length(a)==2){
+		# st<-b
+		# en<-a[2]
+		# strand<-"-"
+	# }else{
+		# st<-a
+		# en<-b
+	# }
+	# out<-c(id, strand, st,en,name)
+	# out
+# }
+
 split_glassgo<-function(x){
 	tmp<-strsplit(x[1], ">")[[1]]
 	if(length(tmp)>2){
@@ -59,12 +93,13 @@ split_glassgo<-function(x){
 	name<-strsplit(tmp3,",")[[1]][1]
 	tmp2<-strsplit(tmp2,"-")[[1]]
 	a<-tmp2[1]
-	b<-tmp2[2]
+	b<-as.numeric(tmp2[2])
 	a<-strsplit(a,"c")[[1]]
 	strand<-"+"
-	if(length(a)==2){
+	a<-as.numeric(a[length(a)])
+	if(b<a){
 		st<-b
-		en<-a[2]
+		en<-a
 		strand<-"-"
 	}else{
 		st<-a
@@ -184,6 +219,7 @@ coor<-export_ncRNA_coordinates(fasta)
 #16S RNA
 orgs<-unique(coor[,1])
 command<-paste("python3 ", script_path, " -s ", db_path, " -rRNA ", paste(orgs, collapse=" "))
+print(command)
 rRNA<-system(command, intern=T)
 empty<-grep("No 16srRNA found",rRNA)
 if(length(empty)>0){
@@ -244,7 +280,7 @@ coordinates<-tempfile()
 write.table(coor3,file=coordinates, sep="\t", row.names=F, col.names=F, quote=F)
 
 command<-paste("python3 ", script_path, " -s ", db_path, " -a ", coordinates)
-
+print(command)
 dat<-system(command, intern=T)
 empty<-which(dat=="")
 if(length(empty)>0){
