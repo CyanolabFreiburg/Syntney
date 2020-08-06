@@ -75,11 +75,8 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             desc, seq = seqdict[element]
             f.write(">" + desc + "\n" + str(seq) + "\n")
         f.close()
-
-        
         proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "synteny_window=" + synteny_window, "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
-        #proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "duplicates_allowed=TRUE", "synteny_window=" + synteny_window, "name=" + wdir + "syntenyfile", "coprarna_compatible=FALSE", "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
-    
+       
     finally:
         # remove tmp file 
         os.unlink(f.name)
@@ -119,7 +116,7 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             list_name = "#missing_data"
         if master_table[i].startswith("#16S_RNA"):
             list_name = "#16S_RNA"
-
+    
     #return r_script_cluster_table, r_script_synteny_table, network_ids, test_ids
     return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, rRNA_network_table, network_ids, test_ids
 
@@ -802,6 +799,15 @@ def visualize_cytoscape_network(network, outfile):
         for connected_cluster in network[cluster][1]:
             weight = network[cluster][1][connected_cluster][0]
             f.write(cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n")
+    f.close()
+
+
+# the annotation file comes from the R-Script and is only used, if the user apply the -n --network parameter
+def store_network_annotation_table(network_annotation, outfile):
+    f = open(outfile, "w")
+    for entry in network_annotation:
+        f.write(str(entry) + "\n")
+    f.close()
 
 
 # produces an output file containing the sequence identifiers with their up and downstream cluster numbers.
@@ -942,9 +948,8 @@ def main():
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    ###network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network)
+    ###network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network) 
     network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network)
-
 
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
@@ -972,6 +977,7 @@ def main():
         output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "cluster.txt")
     elif args.network == "cys":
         visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt")
+        store_network_annotation_table(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
         if test_synteny_table is not None:
             output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "test_cluster.txt")
         output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "network_cluster.txt")
