@@ -9,14 +9,14 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/inputForJens.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new.db
 
 
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/Spot42_short.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/synt.db
+#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa  -o ~/Syntney_db/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa  -o ~/Syntney_db/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa"
+#condfilename<-"~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
@@ -224,7 +224,13 @@ orgs<-unique(coor[,1])
 command<-paste("python3 ", script_path, " -s ", db_path, " -rRNA ", paste(orgs, collapse=" "))
 print(command)
 rRNA<-system(command, intern=T)
+
+startp<-grep(">",rRNA)[1]
+rRNA<-rRNA[startp:length(rRNA)]
+
 empty<-grep("No 16srRNA found !!!!!!!",rRNA)
+empty2<-which(rRNA=="")
+empty<-c(empty,empty2)
 if(length(empty)>0){
 	rRNA<-rRNA[-c(empty-1,empty)]
 }
@@ -270,7 +276,7 @@ if(length(removed2)>0){
 	removed2<-cbind(removed2, rep("no_16S_rRNA",length(removed2)))
 }
 
-
+#write.table(rRNA2, file="~/media/jens@margarita/twst.txt", sep="\t")
 s<-as.numeric(coor[,3])
 e<-as.numeric(coor[,4])
 m<-round(s+(e-s)/2,digits=0)
