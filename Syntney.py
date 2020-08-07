@@ -9,6 +9,66 @@ from ete3 import *
 import shutil
 import sys
 import tempfile
+import re
+
+
+
+def check_NCBI_format(fasta_header):
+    tmp_header = ""
+    p = re.compile(r'.*:c?\d*-\d*')
+    q = re.compile(r'.*/\d*-\d*')
+    m = p.match(fasta_header)
+    n = q.match(fasta_header)
+
+    if m != None:
+        if m.span()[0] == 0:
+            return fasta_header
+    
+    elif n != None:
+        if n.span()[0] == 0:
+            header_arr = fasta_header.split(" ")
+            tmp_header_arr = header_arr[0].split("/")
+            tmp_id = tmp_header_arr[0]
+            tmp_coords = tmp_header_arr[1].split('-')
+            if int(tmp_coords[0]) <= int(tmp_coords[1]):
+                out_str = str(tmp_id) + ":" + str(tmp_coords[0]) + "-" + str(tmp_coords[1]) + " " + str(" ".join(header_arr[1:]))
+                return out_str
+            else:
+                out_str = str(tmp_id) + ":c" + str(tmp_coords[1]) + "-" + str(tmp_coords[0]) + " " + str(" ".join(header_arr[1:]))
+                return out_str
+    else:
+        raise Exception()
+
+
+def check_fasta_consistency(fasta_file):
+    f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+    tmp_file = f.name
+    count = 0
+    try:
+        with open(fasta_file, "rU") as handle:
+            for record in SeqIO.parse(handle, "fasta"):
+                new_header = check_NCBI_format(record.description)
+                f.write(">" + str(new_header) + "\n")
+                f.write(str(record.seq) + "\n")
+                count += 1
+        f.close()
+        
+        if count == 0:
+            raise Exception()
+    except:
+        sys.stderr.write("ERROR => Input format does not contain the expected FASTA format (NCBI or RFAM style)." + "\n" + 
+                "Allowed formats are:" + "\n" +
+                "(a)" + "\n" +
+                "><ID>:<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                "<Sequence>" + "\n" +
+                "if the sequence is encoded on the -strand:" + "\n" +
+                "><ID>:c<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                "(b)" + "\n" +
+                "><ID>/<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                "<Sequence>" + "\n")
+        exit()
+
+    return tmp_file
 
 
 # produces synteny file and cluster file with an R script. Therefore uses the input network fasta file and test fasta
@@ -26,7 +86,7 @@ import tempfile
 # syntenyfile:              syntenyfile that was produced by R script
 # r_script_path:            path to the synteny clustering R script
 # synteny_window:           up and downstream number of bp of sequence that is searched for protein coding sequences
-def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_script_path, num_threads, synteny_window=str(5000)):
+def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script_path, num_threads, synteny_window=str(5000)):
     seqdict = dict()
     network_ids = dict()
     fasta_header_network = dict()
@@ -48,6 +108,7 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
                     seq_id[1] = seq_id[1][1:]
                 seq_id = seq_id[0] + "_" + seq_id[1]
                 network_ids.update({seq_id: [seq_record.description, seq_record.seq]})
+
     test_ids = dict()
     if test_file is not None:
         for seq_record in SeqIO.parse(test_file, "fasta"):
@@ -62,9 +123,9 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
                     if seq_id[1].startswith("c"):
                         seq_id[1] = seq_id[1][1:]
                     seq_id = seq_id[0] + "_" + seq_id[1]
-                    if seq_id not in network_ids:
-                        test_ids.update({seq_id: [seq_record.description, seq_record.seq]})
-                        seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
+                    ##if seq_id not in network_ids:
+                    test_ids.update({seq_id: [seq_record.description, seq_record.seq]})
+                    seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
     else:
         test_ids = None
     
@@ -75,6 +136,7 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
             desc, seq = seqdict[element]
             f.write(">" + desc + "\n" + str(seq) + "\n")
         f.close()
+
         proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "synteny_window=" + synteny_window, "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
        
     finally:
@@ -136,6 +198,7 @@ def run_r_script(network_file, test_file, wdir, r_script_path, sql_db_path, sql_
 # infile specifies a synteny_table file from the synteny clustering R script.
 def get_synteny_dict(ids, r_script_synteny_table):
     synteny_dict = dict()
+
     for line in r_script_synteny_table:
         handle = line.split("\t")
         seq_id = handle[0]
@@ -914,25 +977,20 @@ def main():
     parser.add_argument("-x", "--num_threads", help="Number of threads; default=1", type=int, default=1)
     args = parser.parse_args()
 
-    # check if TMP folder exists
-    wdir = str(os.path.abspath(args.w_dir)) + "/TMP/"
-    if os.path.isdir(wdir):
-        shutil.rmtree(wdir)
-
     # check if psi_out folder exists
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
     if os.path.isdir(path_psi_out):
         shutil.rmtree(path_psi_out)
 
-    # setup TMP folder
-    os.mkdir("TMP")
+    # check the FASTA file(s) for consistency
+    proven_network_fasta = check_fasta_consistency(args.network_file)
+    if args.test_file != None:
+        proven_test_fasta = check_fasta_consistency(args.test_file)
+    else:
+        proven_test_fasta = None
     
     try:
-        r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, r_rRNA_network_table, network_ids, test_ids = run_r_script(args.network_file, args.test_file,
-                                                                                                            wdir, args.cluster_script, args.sqlite_db, args.sqlite_script,
-                                                                                                            args.num_threads, synteny_window=
-                                                                                                            str(args.synteny_window))
-        
+        r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, r_rRNA_network_table, network_ids, test_ids = run_r_script(proven_network_fasta, proven_test_fasta, args.cluster_script, args.sqlite_db, args.sqlite_script, args.num_threads, synteny_window=str(args.synteny_window))
         
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
@@ -948,7 +1006,6 @@ def main():
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    ###network, tree, tree_iddict = normalize_connections(wdir, args.network_file, network) 
     network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network)
 
     if args.node_normalization is True:
@@ -971,21 +1028,18 @@ def main():
     write_outfile_from_synteny_table(network_synteny_table, network_ids, args.outfiles + "_network.fasta")
     write_outfile_from_missing_ids_table(r_missing_ids_table, args.outfiles + "_missing_ids.txt")
     if test_synteny_table is not None:
-        write_outfile_from_synteny_table(test_synteny_table, test_ids, args.outfiles + "_questionable.fasta")
+        write_outfile_from_synteny_table(test_synteny_table, test_ids, args.outfiles + "_evaluated.fasta")
     if args.network == "svg":
         visualize_network(network, outfile=args.outfiles + "_Network.svg")
-        output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "cluster.txt")
+        output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_cluster.txt")
     elif args.network == "cys":
         visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt")
         store_network_annotation_table(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
         if test_synteny_table is not None:
-            output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "test_cluster.txt")
-        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "network_cluster.txt")
+            output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_test_cluster.txt")
+        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "_network_cluster.txt")
     else:
         pass
-
-    #delete TMP folder
-    shutil.rmtree(wdir)
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
