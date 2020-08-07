@@ -1000,8 +1000,10 @@ def main():
         
     try:
         network_synteny_table = get_synteny_dict(network_ids, r_script_synteny_table)
-    except:
-        sys.exit("ERROR: Function  get_synteny_dict(network_ids, r_script_synteny_table)  failed!")
+        if len(network_synteny_table) <= 2:
+            raise Exception("The number of sequences are to low for computing a network! Please increase the number of input sequences in your network.fasta file.")
+    except Exception as error:
+        sys.exit("ERROR: Function  get_synteny_dict(network_ids, r_script_synteny_table)  failed!" + "\n" + repr(error))
     
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
