@@ -12,11 +12,11 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa  -o ~/Syntney_db/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-#condfilename<-"~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa"
+#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/missing6.fasta"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
@@ -106,7 +106,8 @@ split_glassgo<-function(x){
 		st<-a
 		en<-b
 	}
-	out<-c(id, strand, st,en,name)
+	ID<-paste(id,a,sep="_")
+	out<-c(id, strand, st,en,name,ID)
 	out
 }
 
@@ -124,7 +125,7 @@ export_ncRNA_coordinates<-function(x){
 	
 	tmp<-do.call(rbind,lapply(headers,split_glassgo))
 	tmp<-cbind(tmp,headers,seqs)
-	colnames(tmp)<-c("Accesion_number", "Strand","start","end","name","Full_header","sequence")
+	colnames(tmp)<-c("Accesion_number", "Strand","start","end","name","ID","Full_header","sequence")
 	tmp
 }
 
@@ -268,7 +269,7 @@ if(count/nrow(coor)>=rRNA_existence_threshold){
 		}
 	}
 	if(length(removed)>0){
-		removed2<-coor[removed,1]
+		removed2<-coor[removed,"ID"]
 		coor<-coor[-removed,]
 	}	
 } 
@@ -283,7 +284,8 @@ m<-round(s+(e-s)/2,digits=0)
 
 wi<-rep(synteny_window,nrow(coor))
 
-coor3<-cbind(paste(coor[,1],"_",coor[,3],sep=""),coor[,1],m,wi)
+#coor3<-cbind(paste(coor[,1],"_",coor[,3],sep=""),coor[,1],m,wi)
+coor3<-cbind(coor[,"ID"],coor[,1],m,wi)
 
 coordinates<-tempfile()
 write.table(coor3,file=coordinates, sep="\t", row.names=F, col.names=F, quote=F)
@@ -299,9 +301,10 @@ dat<-do.call(rbind,strsplit(dat,"\t"))
 
 na<-setdiff(coor3[,1],unique(dat[,1]))
 if(length(na)>0){
-	tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
+	#tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
+	tmp<-unlist(lapply(na, function(x){ return(which(coor[,"ID"]==x))}))
 	coor<-coor[-tmp,]
-	na<-cbind(na, rep("not_in_database/no_annotatio",length(na)))
+	na<-cbind(na, rep("not_in_database/no_annotation",length(na)))
 }
 unlink(coordinates)
 
@@ -316,7 +319,9 @@ if(count/nrow(coor)<rRNA_existence_threshold){
 }
 
 ids<-unique(dat[,1])
-id2<-paste(coor[,1],coor[,3],sep="_")
+#id2<-paste(coor[,1],coor[,3],sep="_")
+id2<-paste(coor[,"ID"])
+
 
 out<-vector("list", length(ids))
 names(out)<-ids
@@ -450,4 +455,4 @@ if(write_files==TRUE){
 	#y <- capture.output(write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	#cat(paste(y, collapse = "\n"))
 }
-
+write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
