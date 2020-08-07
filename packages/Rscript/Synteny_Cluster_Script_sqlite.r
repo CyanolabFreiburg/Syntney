@@ -455,4 +455,3 @@ if(write_files==TRUE){
 	#y <- capture.output(write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	#cat(paste(y, collapse = "\n"))
 }
-write.table(cluster[[2]], file=paste(name,"network_annotation.txt",sep="_"), sep="\t", quote=F,row.names = FALSE )
