@@ -866,7 +866,7 @@ def visualize_cytoscape_network(network, outfile):
 
 
 # the annotation file comes from the R-Script and is only used, if the user apply the -n --network parameter
-def store_network_annotation_table(network_annotation, outfile):
+def write_std_data(network_annotation, outfile):
     f = open(outfile, "w")
     for entry in network_annotation:
         f.write(str(entry) + "\n")
@@ -1025,19 +1025,20 @@ def main():
     else:
         test_synteny_table = None
     normalize_synteny_value(network_synteny_table, test_synteny_table)
-    write_outfile_from_synteny_table(network_synteny_table, network_ids, args.outfiles + "_network.fasta")
-    write_outfile_from_missing_ids_table(r_missing_ids_table, args.outfiles + "_missing_ids.txt")
+    write_outfile_from_synteny_table(network_synteny_table, network_ids, args.outfiles + "_Network.fasta")
+    write_outfile_from_missing_ids_table(r_missing_ids_table, args.outfiles + "_Missing_Ids.txt")
     if test_synteny_table is not None:
-        write_outfile_from_synteny_table(test_synteny_table, test_ids, args.outfiles + "_evaluated.fasta")
+        write_outfile_from_synteny_table(test_synteny_table, test_ids, args.outfiles + "_Evaluated.fasta")
     if args.network == "svg":
         visualize_network(network, outfile=args.outfiles + "_Network.svg")
-        output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_cluster.txt")
+        output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Cluster.txt")
     elif args.network == "cys":
         visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt")
-        store_network_annotation_table(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
+        write_std_data(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
+        write_std_data(r_script_synteny_table, outfile=args.outfiles + "_Synteny_Table.txt")
         if test_synteny_table is not None:
-            output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_test_cluster.txt")
-        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "_network_cluster.txt")
+            output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Evaluated_Cluster.txt")
+        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "_Network_Cluster.txt")
     else:
         pass
 
