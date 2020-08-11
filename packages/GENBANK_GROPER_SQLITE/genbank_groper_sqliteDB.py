@@ -471,11 +471,6 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                                 # print("after barrnap results: does it have some data or not:", os.stat(barrnap_out).st_size != 0)
                                 if os.stat(barrnap_out).st_size != 0:
                                     sequences_dict = barrbap_dict_creation(barrnap_out)
-                                
-                                    # remove the output files created by barrnap
-                                    # os.system("rm -f " + str(gb_record.id) + "*.fai")
-                                    # os.system("rm -f " + barrnap_out)
-
                                     # provides keys only in the dictionary
                                     keys = list(sequences_dict.keys())
                                     # extracts sequences from the dictionary
@@ -501,28 +496,13 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                                     elif dim == 2 or dim == 1:
                                         # print("\ndetected 16sRNA are 2 or less !!!!\n")
                                         consensus_seq = sequences[0]
-                                    # else:
-                                        # print("continue")
-                                        # continue
-                                
-                                    
+
                                 else:
                                     consensus_seq = "No 16sRNA sequence found"
                                     # print("No 16sRNA sequence found")
-                                
-                                # remove the output files created by barrnap
-                                # os.system("rm -f " + str(gb_record.id) + "*.fai")
-                                # os.system("rm -f " + barrnap_out)
-                                # time.sleep(3)
-                                
                                 # dna_seq is being encoded to save space i.e. BLOB entry in DB
                                 dna_seq = zlib.compress(str(gb_record.seq).encode('utf-8'))
 
-                                # insert organism id, dna and 16sRNA sequence.
-                                # print("input to insert_db: ", con)
-                                # print("input to insert_db: ", gb_record.id)
-                                # print("input to insert_db: ", consensus_seq)
-                                # print("input to insert_db: ", chr_ref)
                                 insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
                                 # print("SqliteDB is successfuly updated !!!!\n")
                                 # remove the redundant/temp file
@@ -559,6 +539,9 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
         
         except:
             print("ERROR in extraction and insertion of data")
+            os.system("rm -f *.fai barrnap.*")
+    
+    # remove the output files created by barrnap
     os.system("rm -f *.fai barrnap.*")
     return user_acc, chr_ref
 
@@ -793,7 +776,7 @@ def process_NCBI_lookup(in_file, directory, out_file):
     handle.write(md5value)
     handle.close()
     # clean prokayrotes.txt file
-    # os.remove(in_file)
+    os.remove(in_file)
 
 def find_refseq(ncbi_file_path, input_param):
     """finds the refseq_id of an accession in master lookup table"""
@@ -836,10 +819,12 @@ def seq_extraction(dseq, positions, complement):
         # print(records)
         for (start, stop, strand) in positions[name]:
             short_seq = str(dna_seq)[start-1:stop]
+            name = str(name) + "_" + str(start) + "_" + str(stop)
             if strand == "+":
                 short_seq_all[name] = short_seq
             elif strand == "-":
-                bases = list(short_seq) 
+                short_seq_neg = short_seq
+                bases = list(short_seq_neg) 
                 bases = reversed([complement.get(base,base) for base in bases])
                 bases = ''.join(bases)
                 short_seq_all[name] = bases
@@ -915,6 +900,7 @@ def update_db(con, id_container):
             # try:
                 cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
                 chr_ref = cur.fetchall()
+                # print("chr_ref :", chr_ref)
                 # con.commit()
                 # input_param = chr_ref[0][0]
                 # con.commit()
@@ -925,7 +911,14 @@ def update_db(con, id_container):
                                 (chr_ref[0][0], right_corner, left_corner))
                     rows = cur.fetchall()
                     con.commit()
-                    for row in rows:
+                    if len(rows) == 0:
+                        final_results += str(id_container[i][0]) + "\t" + str(id_container[i][1]) + "\t" \
+                                    + "no annotation" + "\t" + "no annotation" \
+                                    "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\t" + "no annotation" + "\t" + "no annotation" \
+                                    + "\n"
+                    else:
+                        for row in rows:
                             # DESCRIPTION => row[0]=unique_number row[1]=acc
                             # row[2]=locus_name row[3]=gene_name row[4]=start_pos
                             # row[5]=end_pos row[6]=ori row[7]=protein_seq
@@ -1041,12 +1034,13 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
         cur = con.cursor()
         dna_flag = False
 
-        positions = defaultdict(list)
+        # positions = defaultdict(list)
         short_seq_all = dict()
         complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
 
         with open(args_extDNA, 'r') as fr:
             for line in fr:
+                positions = defaultdict(list)
                 id, start, stop, strand = line.split()
                 # print(id, start, stop, strand)
                 positions[id].append((int(start), int(stop), str(strand)))
@@ -1057,7 +1051,9 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
                 # print(dseq)
                 if dseq != []:
                     # print("there is a sequence in DB")
-                    short_seq_all = seq_extraction(dseq, positions, complement)
+                    data_extracted = seq_extraction(dseq, positions, complement)
+                    short_seq_all.update(data_extracted)
+                    # short_seq_all.update(seq_extraction(dseq, positions, complement))
                 else:
                     final_results = ""
                     organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
@@ -1069,11 +1065,18 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
                     dseq = cur.fetchall()
                     con.commit()
                     if dseq != []:
-                        short_seq_all = seq_extraction(dseq, positions, complement)
+                        data_extracted = seq_extraction(dseq, positions, complement)
+                        # print(data_extracted)    
+                        short_seq_all.update(data_extracted)
+                    else:
+                        print("no sequence found for ", id)
+
+        # print("positions are : ", positions)
+        # print("short_Seq are : ", short_seq_all)        
 
     print()
     for data in short_seq_all:
-        print(">" + data)
+        print(">" + data )
         print(short_seq_all[data])
 
     # close db connection
@@ -1217,6 +1220,6 @@ if __name__ == "__main__":
         find_srRNA_gene(args.accession, args.srRNA, id_container )
 
     if args.extDNA:
-        # print(args.extDNA)
+        #print(args.extDNA)
         dna_extraction(args.extDNA, args.sqlite, ncbi_file_path)
         
