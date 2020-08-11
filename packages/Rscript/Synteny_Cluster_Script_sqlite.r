@@ -12,11 +12,11 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/missing6.fasta"
+#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
@@ -263,7 +263,7 @@ if(count/nrow(coor)>=rRNA_existence_threshold){
 	orgs<-gsub(">","",rRNA[orgs])
 	removed<-c()
 	for(i in 1:nrow(coor)){
-		tmp<-na.omit(match(gsub("\\..*","",coor[i,1]),orgs))
+		tmp<-na.omit(match(coor[i,1],orgs))
 		if(length(tmp)==0){
 			removed<-c(removed,i)
 		}
@@ -299,7 +299,12 @@ if(length(empty)>0){
 }
 dat<-do.call(rbind,strsplit(dat,"\t")) 
 
-na<-setdiff(coor3[,1],unique(dat[,1]))
+na<-grep("no annotation", dat[,3])
+if(length(na)>0){
+	na<-dat[na,1]
+}
+
+na<-c(setdiff(coor3[,1],unique(dat[,1])),na)
 if(length(na)>0){
 	#tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
 	tmp<-unlist(lapply(na, function(x){ return(which(coor[,"ID"]==x))}))
@@ -323,32 +328,36 @@ ids<-unique(dat[,1])
 id2<-paste(coor[,"ID"])
 
 
+ids<-ids[match(id2,ids)]
+
 out<-vector("list", length(ids))
 names(out)<-ids
 
 for(i in 1:length(ids)){
 	tmp<-which(dat[,1]==ids[i])
 	srna<-match(ids[i],id2)
-	stra<--1
-    if(coor[srna,2]=="+"){
-      stra<-1
-    }
-	temp_out<-cbind(dat[tmp,7],dat[tmp,5],dat[tmp,6],dat[tmp,3],dat[tmp,4],dat[tmp,8])
-	colnames(temp_out)<-c("strand","start","end","gene_name","locus_tag","AA_sequence")
-	ma<-max(as.numeric(temp_out[,3]))
-	mi<-min(as.numeric(temp_out[,2]))
-	aa<-as.numeric(temp_out[,2])-mi
-	bb<-as.numeric(temp_out[,3])-mi
-	s_srna<-min(as.numeric(coor[srna,3:4]))-mi
-	e_srna<-max(as.numeric(coor[srna,3:4]))-mi
-	nan<-which(is.na(temp_out[,"locus_tag"]))
-	na<-which(temp_out[,"locus_tag"]=="na")
-	nan<-unique(c(na,nan))
-	if(length(nan)>0){
-		temp_out[nan,"locus_tag"]<-unlist(lapply(length(nan),rand_extension,Accession=ids[i]))
+	if(is.na(srna)==FALSE){
+		stra<--1
+		if(coor[srna,2]=="+"){
+		  stra<-1
+		}
+		temp_out<-cbind(dat[tmp,7],dat[tmp,5],dat[tmp,6],dat[tmp,3],dat[tmp,4],dat[tmp,8])
+		colnames(temp_out)<-c("strand","start","end","gene_name","locus_tag","AA_sequence")
+		ma<-max(as.numeric(temp_out[,3]))
+		mi<-min(as.numeric(temp_out[,2]))
+		aa<-as.numeric(temp_out[,2])-mi
+		bb<-as.numeric(temp_out[,3])-mi
+		s_srna<-min(as.numeric(coor[srna,3:4]))-mi
+		e_srna<-max(as.numeric(coor[srna,3:4]))-mi
+		nan<-which(is.na(temp_out[,"locus_tag"]))
+		na<-which(temp_out[,"locus_tag"]=="na")
+		nan<-unique(c(na,nan))
+		if(length(nan)>0){
+			temp_out[nan,"locus_tag"]<-unlist(lapply(length(nan),rand_extension,Accession=ids[i]))
+		}
+		temp_out<-data.frame(temp_out,aa,bb,rep(s_srna,nrow(temp_out)),rep(e_srna,nrow(temp_out)),rep(stra,nrow(temp_out)),rep(coor[srna,5],nrow(temp_out)))
+		out[[i]]<-temp_out
 	}
-	temp_out<-data.frame(temp_out,aa,bb,rep(s_srna,nrow(temp_out)),rep(e_srna,nrow(temp_out)),rep(stra,nrow(temp_out)),rep(coor[srna,5],nrow(temp_out)))
-	out[[i]]<-temp_out
 }
 filen<-tempfile()
 tagtable<-locus_tag2org(out)
@@ -455,3 +464,4 @@ if(write_files==TRUE){
 	#y <- capture.output(write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	#cat(paste(y, collapse = "\n"))
 }
+#write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
