@@ -60,10 +60,10 @@ sum_of_columns = []
 
 def organims_name(organism_name):
     if "/" in organism_name:
-        organism = organism_name.strip().split("/")[-1].split(".")[0]
+        organism = organism_name.strip().split("/")[-1]
         # print(organism + " organism with / executed")
     else:
-        organism = organism_name.strip().split(".")[0]
+        organism = organism_name.strip()
         # print(organism + " without / executed")
 
     return organism
@@ -396,13 +396,13 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                     rows_genome_dna = list()
                     # todo not well implemented yet
                     rows_genbank.append((gb_record.id, 1, 2, 3, "foo"))
-                    gb_id = (gb_record.id).strip().split(".")[0]
+                    gb_id = (gb_record.id).strip()
 
                     # print("gb_id == user_acc, gb_id, user_acc: ",  gb_id == user_acc, gb_id, user_acc)
                     # print(gb_id == chr_ref.split(".")[0], gb_id, chr_ref.split(".")[0]  )
 
                     # if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
-                    if gb_id == user_acc or gb_id == chr_ref.split(".")[0]:
+                    if gb_id == user_acc or gb_id == chr_ref:
                         user_acc_flag = True
                         # get data from genbank and rearrange the structure
                         for entry in gb_record.features:
@@ -620,12 +620,12 @@ def get_data(con, user_id, user_acc, user_center,
 
         try:
             # Fayyaz acc instead of * to save memory
-            user_acc = user_acc.strip().split(".")[0]
-            chr_id = chr_ref.strip().split(".")[0]
-            # print("user_acc, chr_id: ",  user_acc, chr_id)
+            user_acc = user_acc.strip()
+            chr_id = chr_ref.strip()
+            print("user_acc, chr_id: ",  user_acc, chr_id)
 
             # Fayyaz, please check if this needed anymore !!!!!!!!!!!
-            cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ? OR acc LIKE ?", (user_acc + '._%', chr_id + '._%'))
+            cur.execute("SELECT acc FROM genome_dna WHERE acc=? OR acc=?", (user_acc, chr_id))
             rows = cur.fetchall()
             con.commit()
             # print("rows :::", rows)
@@ -648,16 +648,16 @@ def get_data(con, user_id, user_acc, user_center,
                     # print("before get_data_From_ncbi: ", ftp_lnk, chr_ref, user_acc, con, flag, chr_flag, "\n")
                     user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag)
                     rows = [1]
-                    user_acc = user_acc.strip().split(".")[0]
+                    user_acc = user_acc.strip()
 
                     # cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
                                 # (start_pos<=?3 and end_pos>=?4) or acc LIKE ?2 and 
                                 # (start_pos<=?3 and end_pos>=?4)""",
                                 # (user_acc + '._%',  gb_id, right_corner, left_corner))
-                    cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                                (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
+                    cur.execute("""SELECT * FROM proteins WHERE acc=?1 and
+                                (start_pos<=?3 and end_pos>=?4) or acc=?1 and 
                                 (start_pos<=?3 and end_pos>=?4)""",
-                                (user_acc + '._%',  gb_id, right_corner, left_corner))
+                                (user_acc,  gb_id, right_corner, left_corner))
                     rows = cur.fetchall()
                     con.commit()
                     if len(rows) == 0:
@@ -688,11 +688,11 @@ def get_data(con, user_id, user_acc, user_center,
                     user_acc, gb_id = get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag)
 
                     # Fayyaz added to show results when organism downloaded from ncbi directly.
-                    user_acc = user_acc.strip().split(".")[0]
-                    cur.execute("""SELECT * FROM proteins WHERE acc LIKE ?1 and
-                                (start_pos<=?3 and end_pos>=?4) or acc LIKE ?1 and 
+                    user_acc = user_acc.strip()
+                    cur.execute("""SELECT * FROM proteins WHERE acc=?1 and
+                                (start_pos<=?3 and end_pos>=?4) or acc=?1 and 
                                 (start_pos<=?3 and end_pos>=?4)""",
-                                (user_acc + '._%',  gb_id, right_corner, left_corner))
+                                (user_acc,  gb_id, right_corner, left_corner))
                     rows = cur.fetchall()
                     con.commit()
                     if len(rows) == 0:
@@ -896,9 +896,9 @@ def update_db(con, id_container):
                 if left_corner < 0:
                     left_corner = 0
                 right_corner = int(id_container[i][2]) + int(id_container[i][3])
-                input_param = id_container[i][1].strip().split(".")[0]
+                input_param = id_container[i][1].strip()
             # try:
-                cur.execute("SELECT acc FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                cur.execute("SELECT acc FROM genome_dna WHERE acc=?", (input_param,))
                 chr_ref = cur.fetchall()
                 # print("chr_ref :", chr_ref)
                 # con.commit()
@@ -962,9 +962,9 @@ def find_srRNA_gene(args_accession, args_srRNA, id_container):
             cur = con.cursor()
             try:
                 for line in args_srRNA:
-                    input_param = line.strip().split(".")[0]
+                    input_param = line.strip()
                     print("input_param ", input_param, "!!!!!!!!!!!!!\n")
-                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc=?", (input_param,))
                     chr_ref = cur.fetchall()
                     con.commit()
                     if chr_ref == []:
@@ -975,8 +975,8 @@ def find_srRNA_gene(args_accession, args_srRNA, id_container):
                                 # print("input_list: ", input_list, "!!!!!!!!!\n")
                                 final_results = update_db(con, input_list)
                 for line in args_srRNA:
-                    input_param = line.strip().split(".")[0]
-                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+                    input_param = line.strip()
+                    cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc=?", (input_param,))
                     chr_ref = cur.fetchall()
                     con.commit()
                     if chr_ref != []:
@@ -1029,51 +1029,55 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
     flag = False
     # print(args_sqlite)
     con = lite.connect(args.sqlite)
-    with con:
+    try:
 
-        cur = con.cursor()
-        dna_flag = False
+        with con:
+            cur = con.cursor()
+            dna_flag = False
 
-        # positions = defaultdict(list)
-        short_seq_all = dict()
-        complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
+            # positions = defaultdict(list)
+            short_seq_all = dict()
+            complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
 
-        with open(args_extDNA, 'r') as fr:
-            for line in fr:
-                positions = defaultdict(list)
-                id, start, stop, strand = line.split()
-                # print(id, start, stop, strand)
-                positions[id].append((int(start), int(stop), str(strand)))
-                input_param = line.strip().split(".") [0]
-                cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
-                dseq = cur.fetchall()
-                con.commit()
-                # print(dseq)
-                if dseq != []:
-                    # print("there is a sequence in DB")
-                    data_extracted = seq_extraction(dseq, positions, complement)
-                    short_seq_all.update(data_extracted)
-                    # short_seq_all.update(seq_extraction(dseq, positions, complement))
-                else:
-                    final_results = ""
-                    organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
-                    # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
-                    final_results += get_data(con, line[0], input_param,
-                                            int(args.position), int(args.range),
-                                            organism_col, ftp_lnk, organism_arr, chr_ref)
-                    cur.execute("SELECT dna FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
+            with open(args_extDNA, 'r') as fr:
+                for line in fr:
+                    positions = defaultdict(list)
+                    id, start, stop, strand = line.split()
+                    # print(id, start, stop, strand)
+                    positions[id].append((int(start), int(stop), str(strand)))
+                    input_param = line.strip().split()[0]
+                    # print("input organism : ", input_param)
+                    cur.execute("SELECT dna FROM genome_dna WHERE acc=?", (input_param,))
                     dseq = cur.fetchall()
                     con.commit()
+                    # print(dseq)
                     if dseq != []:
+                        # print("there is a sequence in DB")
                         data_extracted = seq_extraction(dseq, positions, complement)
-                        # print(data_extracted)    
                         short_seq_all.update(data_extracted)
+                        # short_seq_all.update(seq_extraction(dseq, positions, complement))
                     else:
-                        print("no sequence found for ", id)
+                        final_results = ""
+                        organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
+                        # print("return of chrom_plas: ", organism_col, ftp_lnk, organism_arr, chr_ref)
+                        final_results += get_data(con, line[0], input_param,
+                                                int(args.position), int(args.range),
+                                                organism_col, ftp_lnk, organism_arr, chr_ref)
+                        cur.execute("SELECT dna FROM genome_dna WHERE acc=?", (input_param,))
+                        dseq = cur.fetchall()
+                        con.commit()
+                        if dseq != []:
+                            data_extracted = seq_extraction(dseq, positions, complement)
+                            # print(data_extracted)    
+                            short_seq_all.update(data_extracted)
+                        else:
+                            print("no sequence found for ", id)
 
-        # print("positions are : ", positions)
-        # print("short_Seq are : ", short_seq_all)        
-
+            # print("positions are : ", positions)
+            # print("short_Seq are : ", short_seq_all)        
+    except lite.IntegrityError:
+        print("pdna could not be performed successfully !!!!!!!!!!!!\n")
+        
     print()
     for data in short_seq_all:
         print(">" + data )
@@ -1136,7 +1140,7 @@ if __name__ == "__main__":
     if os.path.exists(org_name):
         # start pickle of data
         con = lite.connect(args.sqlite)
-        insert_genbank(org_name, con, org_name.strip().split(".")[0], org_name.strip().split(".")[0], 'FALSE')
+        insert_genbank(org_name, con, org_name.strip(), org_name.strip(), 'FALSE')
         # con.close()
     # check if ncbi lookup-file needs to be updated or not!
     update_mode = args.update.split("-")
@@ -1186,11 +1190,11 @@ if __name__ == "__main__":
     # input_param to avoid execution of -g *.gbk again to get_download()
     input_param = ""
     if args.genbank:
-        input_param = (args.genbank).strip().split(".")[0]
+        input_param = (args.genbank).strip()
     if args.srRNA:
         input_param = args.srRNA
     if args.accession:
-        input_param = (args.accession).strip().split(".")[0]
+        input_param = (args.accession).strip()
         input_check(input_param)
 
     # check input is a string or file 
@@ -1220,6 +1224,6 @@ if __name__ == "__main__":
         find_srRNA_gene(args.accession, args.srRNA, id_container )
 
     if args.extDNA:
-        #print(args.extDNA)
+        # print(args.extDNA)
         dna_extraction(args.extDNA, args.sqlite, ncbi_file_path)
         
