@@ -12,11 +12,13 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
+#filename<-"~/media/jens@margarita/Syntney/testfiles/network_RF00034_test_RF00035__.fasta"
 #filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa"
+
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
@@ -214,14 +216,32 @@ proc_cdhit<-function(x){
 
 
 
-fasta<-read.delim(filename, header=F, sep="\t")
+fasta<-readLines(filename)
+net<-grep("#Network",fasta)
+test<-grep("#Test", fasta)
+if(length(net)==0){
+	net<-1:length(fasta)
+	test<-c()
+}
+if(length(net)==1 & length(test)==0){
+	net<-(net+1):length(fasta)
+	test<-c()
+}
+if(length(net)==1 & length(test)==1){
+	net<-(net+1):(test-1)
+	test<-(test+1):length(fasta)
+}
+
+
 closeAllConnections()
-fasta<-as.character(fasta[,1])
-coor<-export_ncRNA_coordinates(fasta)
+coor<-export_ncRNA_coordinates(fasta[c(net,test)])
+net<-export_ncRNA_coordinates(fasta[net])
+#test<-export_ncRNA_coordinates(fasta[test])
+
 
 
 #16S RNA
-orgs<-unique(coor[,1])
+orgs<-unique(net[,1])
 command<-paste("python3 ", script_path, " -s ", db_path, " -rRNA ", paste(orgs, collapse=" "))
 print(command)
 rRNA<-system(command, intern=T)
@@ -245,12 +265,12 @@ orgs2<-gsub(">","",rRNA[orgs])
 rRNA2<-c()
 count<-0
 for(i in 1:length(orgs)){
-	tmp<-grep(orgs2[i], coor[,1])
+	tmp<-grep(orgs2[i], net[,1])
 	if(length(tmp)>0){
 		count<-count+length(tmp)
 		rRNA3<-matrix(,length(tmp),2)
 		for(j in 1:length(tmp)){
-			rRNA3[j,1]<-coor[tmp[j],"Full_header"]
+			rRNA3[j,1]<-net[tmp[j],"Full_header"]
 			rRNA3[j,2]<-rRNA[orgs[i]+1]
 		}
 		rRNA2<-rbind(rRNA2,rRNA3)
@@ -258,7 +278,7 @@ for(i in 1:length(orgs)){
 }
 
 removed2<-c()
-if(count/nrow(coor)>=rRNA_existence_threshold){
+if(count/nrow(net)>=rRNA_existence_threshold){
 	orgs<-grep(">", rRNA)
 	orgs<-gsub(">","",rRNA[orgs])
 	removed<-c()
@@ -272,6 +292,18 @@ if(count/nrow(coor)>=rRNA_existence_threshold){
 		removed2<-coor[removed,"ID"]
 		coor<-coor[-removed,]
 	}	
+	
+	removed<-c()
+	for(i in 1:nrow(net)){
+		tmp<-na.omit(match(net[i,1],orgs))
+		if(length(tmp)==0){
+			removed<-c(removed,i)
+		}
+	}
+	if(length(removed)>0){
+		removed2<-net[removed,"ID"]
+		net<-net[-removed,]
+	}		
 } 
 if(length(removed2)>0){
 	removed2<-cbind(removed2, rep("no_16S_rRNA",length(removed2)))
@@ -309,17 +341,20 @@ if(length(na)>0){
 	#tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
 	tmp<-unlist(lapply(na, function(x){ return(which(coor[,"ID"]==x))}))
 	coor<-coor[-tmp,]
+	tmp2<-unlist(lapply(na, function(x){ return(which(net[,"ID"]==x))}))
+	net<-net[-tmp2,]	
 	na<-cbind(na, rep("not_in_database/no_annotation",length(na)))
 }
 unlink(coordinates)
 
 no_anno<-rbind(removed2,na)
 
-if(count/nrow(coor)<rRNA_existence_threshold){
-	rRNA2<-matrix(,nrow(coor),2)
-	for(i in 1:nrow(coor)){
-		rRNA2[i,1]<-coor[i,"Full_header"]
-		rRNA2[i,2]<-coor[i,"sequence"]
+
+if(count/nrow(net)<rRNA_existence_threshold){
+	rRNA2<-matrix(,nrow(net),2)
+	for(i in 1:nrow(net)){
+		rRNA2[i,1]<-net[i,"Full_header"]
+		rRNA2[i,2]<-net[i,"sequence"]
 	}
 }
 
@@ -464,4 +499,3 @@ if(write_files==TRUE){
 	#y <- capture.output(write.table(rRNA2, file=stdout(), sep="\t", quote=F,row.names = FALSE , col.names=F))
 	#cat(paste(y, collapse = "\n"))
 }
-#write.table(synteny[[1]], file=paste(name,"synteny_table.txt",sep="_"), sep="\t", quote=F, row.names=F)	
