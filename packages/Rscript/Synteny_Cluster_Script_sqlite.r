@@ -278,7 +278,7 @@ for(i in 1:length(orgs)){
 }
 
 removed2<-c()
-if(count/nrow(net)>=rRNA_existence_threshold){
+if(count/nrow(net)>=rRNA_existence_threshold & count >=3){
 	orgs<-grep(">", rRNA)
 	orgs<-gsub(">","",rRNA[orgs])
 	removed<-c()
@@ -350,7 +350,7 @@ unlink(coordinates)
 no_anno<-rbind(removed2,na)
 
 
-if(count/nrow(net)<rRNA_existence_threshold){
+if(count/nrow(net)<rRNA_existence_threshold | count < 3){
 	rRNA2<-matrix(,nrow(net),2)
 	for(i in 1:nrow(net)){
 		rRNA2[i,1]<-net[i,"Full_header"]
