@@ -90,6 +90,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
     seqdict = dict()
     network_ids = dict()
     fasta_header_network = dict()
+    seqdict.update({"#Network": ["", ""]})
     for seq_record in SeqIO.parse(network_file, "fasta"):
         seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
         seq_id = seq_record.description
@@ -111,6 +112,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
 
     test_ids = dict()
     if test_file is not None:
+        seqdict.update({"#Test": ["", ""]})
         for seq_record in SeqIO.parse(test_file, "fasta"):
             seq_id = seq_record.description
             seq_id = seq_id.split("-")
@@ -134,8 +136,12 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
         f_path = f.name
         for element in seqdict:
             desc, seq = seqdict[element]
-            f.write(">" + desc + "\n" + str(seq) + "\n")
+            if element == "#Network" or element == "#Test":
+                f.write(str(element) + "\n")
+            else:
+                f.write(">" + desc + "\n" + str(seq) + "\n")
         f.close()
+    
 
         proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "synteny_window=" + synteny_window, "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
        
@@ -357,8 +363,8 @@ def tree_construction(rRNA_data):
                         tmp_header = str(count)
                         count += 1
                         forbidden.add(line)
-                else:
-                    skip = True
+                    else:
+                        skip = True
             else:
                 if skip is False:
                     tmp_fasta.write(">" + str(tmp_header) + "\n" + str(line) + "\n")
