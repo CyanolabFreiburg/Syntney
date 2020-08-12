@@ -151,6 +151,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
     missing_ids_table = list()
     rRNA_network_table = list()
 
+    rRNA_lookup = dict()
     list_name = ""
     for i in range(0, len(master_table)):
         if master_table[i].startswith("#"):
@@ -168,6 +169,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
             if tmp_entry[0] in fasta_header_network:
                 rRNA_network_table.append(tmp_entry[0])
                 rRNA_network_table.append(tmp_entry[1])
+                rRNA_lookup[tmp_entry[0]] = 0
         if master_table[i].startswith("#cluster_table"):
             list_name = "#cluster_table"
         if master_table[i].startswith("#synteny_table"):
@@ -178,8 +180,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
             list_name = "#missing_data"
         if master_table[i].startswith("#16S_RNA"):
             list_name = "#16S_RNA"
-    
-    #return r_script_cluster_table, r_script_synteny_table, network_ids, test_ids
+
     return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, rRNA_network_table, network_ids, test_ids
 
 # produces a dictionary from the identifiers of sRNAs (ids). Identifiers must be like "Accessionnumber" + underscore +
@@ -405,7 +406,6 @@ def sum_of_branches(tree, accessions_list, tree_iddict):
     for entry in accessions_list: # writes identifier to numbers that were used in treeconstruction
         acc_ids.append(tree_iddict[entry])
     accessions = tuple(acc_ids)
-
     if len(accessions) > 1:
         n1 = tree.get_common_ancestor(accessions) # nl is the n(ode) of the l(ca)
         sob = n1.dist # adds distance to parent of lca
