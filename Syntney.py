@@ -342,6 +342,7 @@ def tree_construction(rRNA_data):
     try:
         tmp_fasta = tempfile.NamedTemporaryFile(mode='w+', delete=False)
         tmp_header = ""
+        skip = False
         for line in rRNA_data:
             if line.startswith(">"):
                 line = line[1:]
@@ -356,8 +357,13 @@ def tree_construction(rRNA_data):
                         tmp_header = str(count)
                         count += 1
                         forbidden.add(line)
+                else:
+                    skip = True
             else:
-                tmp_fasta.write(">" + str(tmp_header) + "\n" + str(line) + "\n")
+                if skip is False:
+                    tmp_fasta.write(">" + str(tmp_header) + "\n" + str(line) + "\n")
+                else:
+                    skip = False
         tmp_fasta.close()
 
         # produces a distance matrix from the numbered FASTA via clustalo
