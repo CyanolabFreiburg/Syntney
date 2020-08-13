@@ -16,7 +16,7 @@ require(stringi)
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-#filename<-"~/media/jens@margarita/Syntney/testfiles/network_RF00034_test_RF00035__.fasta"
+#filename<-"~/media/jens@margarita/Syntney/testfiles/error2.fasta"
 #filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa"
 
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
@@ -340,9 +340,13 @@ na<-c(setdiff(coor3[,1],unique(dat[,1])),na)
 if(length(na)>0){
 	#tmp<-unlist(lapply(na, function(x){ return(which(paste(coor[,1],"_",coor[,3],sep="")==x))}))
 	tmp<-unlist(lapply(na, function(x){ return(which(coor[,"ID"]==x))}))
-	coor<-coor[-tmp,]
+	if(length(tmp)>0){
+		coor<-coor[-tmp,]
+	}
 	tmp2<-unlist(lapply(na, function(x){ return(which(net[,"ID"]==x))}))
-	net<-net[-tmp2,]	
+	if(length(tmp2)>0){
+		net<-net[-tmp2,]	
+	}
 	na<-cbind(na, rep("not_in_database/no_annotation",length(na)))
 }
 unlink(coordinates)
