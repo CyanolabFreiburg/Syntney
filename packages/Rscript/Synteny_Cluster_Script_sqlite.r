@@ -12,12 +12,12 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/Spot42_rev.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
-#filename<-"~/media/jens@margarita/Syntney/testfiles/error2.fasta"
-#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa"
+#filename<-"~/media/jens@margarita/Syntney/testfiles/zeroEva.fasta"
+#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref.fa"
 
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
@@ -281,17 +281,7 @@ removed2<-c()
 if(count/nrow(net)>=rRNA_existence_threshold & count >=3){
 	orgs<-grep(">", rRNA)
 	orgs<-gsub(">","",rRNA[orgs])
-	removed<-c()
-	for(i in 1:nrow(coor)){
-		tmp<-na.omit(match(coor[i,1],orgs))
-		if(length(tmp)==0){
-			removed<-c(removed,i)
-		}
-	}
-	if(length(removed)>0){
-		removed2<-coor[removed,"ID"]
-		coor<-coor[-removed,]
-	}	
+	
 	
 	removed<-c()
 	for(i in 1:nrow(net)){
@@ -303,7 +293,27 @@ if(count/nrow(net)>=rRNA_existence_threshold & count >=3){
 	if(length(removed)>0){
 		removed2<-net[removed,"ID"]
 		net<-net[-removed,]
-	}		
+	}	
+	
+	if(length(removed)>0){
+		#removed<-net[removed,"ID"]
+		rem<-match(removed2,coor[,"ID"])
+		if(length(rem)>0){
+			coor<-coor[-rem,]
+		}
+		# removed3<-c()
+		# for(i in 1:nrow(coor)){
+			# tmp<-na.omit(match(coor[i,1],orgs))
+			# if(length(tmp)==0){
+				# removed3<-c(removed3,i)
+			# }
+		# }
+		# if(length(removed)>0){
+			# #removed2<-coor[removed3,"ID"]
+			# coor<-coor[-removed3,]
+		#}	
+	}
+	
 } 
 if(length(removed2)>0){
 	removed2<-cbind(removed2, rep("no_16S_rRNA",length(removed2)))
