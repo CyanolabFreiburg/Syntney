@@ -9,15 +9,17 @@ require(stringi)
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/inputForJens.fasta  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney/new.db
 
 
-#R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Copra2_paper/Glassgo/RyhB.fa  synteny_window=3000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
+#, mi. 
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/Spot42_rev.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/Spot42/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+
+
 
 
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
 #filename<-"~/media/jens@margarita/Syntney/testfiles/zeroEva.fasta"
-#filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref.fa"
+filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa"
 
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
@@ -212,6 +214,57 @@ proc_cdhit<-function(x){
 }
 
 
+remove_overlapping_homologs<-function(coor, over_thres=0.5){
+	orgs<-unique(coor[,1])
+	over<-c()
+	for(i in orgs){
+		tmp<-which(coor[,1]==i)
+		if(length(tmp)>1){
+			coordina<-function(coor){
+				out<-as.numeric(coor[3]):as.numeric(coor[4])
+				out
+			}
+			coordi<-apply(coor[tmp,],1,coordina)
+			if(is.matrix(coordi)==T){
+				coordi<-as.list(data.frame(coordi))
+			}
+			names(coordi)<-coor[tmp,"ID"]
+			
+			j<-1
+			while(length(coordi)>1 & j<length(coordi)){
+			
+				tmp<-c()
+				for(jj in (j+1):length(coordi)){
+					l1<-length(coordi[[j]])
+					l2<-length(coordi[[jj]])
+					l<-min(l1,l2)
+					int<-length(intersect(coordi[[j]],coordi[[jj]]))/l
+					names(int)<-paste(names(coordi)[j],names(coordi)[jj],sep=";")
+					tmp<-c(tmp, int)
+					
+				}
+				tmp2<-which(tmp>over_thres)
+				
+				if(length(tmp2)>0){
+					na<-strsplit(names(tmp)[tmp2],";")[[1]][2]
+					over<-c(over, na)
+					coordi<-coordi[-(tmp2+1)]
+					
+				}
+				j<-j+1
+			}			
+		}	
+	}
+	if(length(over)>0){
+		over<-na.omit(match(over, coor[,"ID"]))
+		if(length(over)>0){
+			coor<-coor[-over,]
+		}
+	}
+	coor
+}
+
+
 # Execute functions
 
 
@@ -235,7 +288,15 @@ if(length(net)==1 & length(test)==1){
 
 closeAllConnections()
 coor<-export_ncRNA_coordinates(fasta[c(net,test)])
+coor<-remove_overlapping_homologs(coor)
 net<-export_ncRNA_coordinates(fasta[net])
+dif<-setdiff(net[,"ID"],coor[,"ID"])
+dups<-c()
+if(length(dif)>0){
+	dup<-match(dif,net[,"ID"])
+	net<-net[-dup,]
+	dups<-cbind(dif,rep("overlapping_homologs",length(dif)))
+}
 #test<-export_ncRNA_coordinates(fasta[test])
 
 
@@ -361,7 +422,7 @@ if(length(na)>0){
 }
 unlink(coordinates)
 
-no_anno<-rbind(removed2,na)
+no_anno<-rbind(dups,removed2,na)
 
 
 if(count/nrow(net)<rRNA_existence_threshold | count < 3){
@@ -457,8 +518,8 @@ synteny<-synt_table(out,coor)
 
  cluster_table<-function(cd,dat, synteny){
 	out<-c()
-	anno<-matrix(,length(cd),3)
-	colnames(anno)<-c("node","cluster_name","position_relative_to_sRNA")
+	anno<-matrix(,length(cd),4)
+	colnames(anno)<-c("node","cluster_name","position_relative_to_sRNA","tags")
 	for( i in 1:length(cd)){
 		temp<-paste(cd[[i]], collapse=",")
 		out<-c(out,temp)
@@ -471,6 +532,7 @@ synteny<-synt_table(out,coor)
 			tmp_pos<-""
 		}
 		tmp<-na.omit(match(cd[[i]], dat[,4]))
+		tags<-dat[tmp,4]
 		tmp<-dat[tmp,3]
 		na<-which(tmp=="na")
 		if(length(na)>0){
@@ -485,6 +547,7 @@ synteny<-synt_table(out,coor)
 		anno[i,1]<-paste("cluster_",i,sep="")
 		anno[i,2]<-tmp
 		anno[i,3]<-tmp_pos
+		anno[i,4]<-paste(tags, collapse=",")
 	}
 	names(out)<-paste("cluster_",1:length(out),sep="")
 	out<-list(out,anno)
