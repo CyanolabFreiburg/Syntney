@@ -536,7 +536,6 @@ def normalize_nodes(tree, tree_iddict, network):
         if value == 0:
             zeroweights.append(cluster)
     if len(values) > 0:
-        Warning()
         minimum = min(values)
     else:
         minimum = 1
