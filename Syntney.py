@@ -702,8 +702,9 @@ def pagerank(network, eps=1.0e-14, teleport=False):
     for x in range(len(pagerank_vector)):
 
         pagerankdict.update({reverse_iddict[x]: pagerank_vector[x]})
+
     for entry in network:
-        network[entry][0] = pagerankdict[entry]
+        network[entry][0] = pagerankdict[entry]/(1-pagerankdict["sRNA"])
     return network
 
 
