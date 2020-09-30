@@ -703,10 +703,12 @@ def seq_extraction(dseq, positions, complement):
     for name in positions:
         for (start, stop, strand) in positions[name]:
             short_seq = str(dna_seq)[start-1:stop]
-            name = str(name) + "_" + str(start) + "_" + str(stop)
+            # name = str(name) + "_" + str(start) + "_" + str(stop)
             if strand == "+":
+                name = str(name) + ":" + str(start) + "-" + str(stop)
                 short_seq_all[name] = short_seq
             elif strand == "-":
+                name = str(name) + ":c" + str(stop) + "-" + str(start)
                 short_seq_neg = short_seq
                 bases = list(short_seq_neg) 
                 bases = reversed([complement.get(base,base) for base in bases])
