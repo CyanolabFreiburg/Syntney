@@ -866,14 +866,18 @@ def visualize_network(connectiondict, outfile):
 # input:
 # {cluster: [pagerank, {connected_cluster1: [normalized number of connections, [list of Accessions with this node]],
 #            connected_cluster2: [...]], ...}, [list of accessions with "cluster"], teleport prob. to cluster], ...}
-def visualize_cytoscape_network(network, outfile):
+def visualize_cytoscape_network(network, outfile, mode):
     f = open(outfile, "w")
-    f.write("cluster,connected cluster,PageRank, connection weight\n")
+    if mode == "on":
+        f.write("cluster,connected cluster,PageRank, connection weight\n")
+    elif mode == "off":
+        f.write("cluster,connected cluster,Sum of branches, connection weight\n")
     for cluster in network:
         pagerank = network[cluster][0]
         for connected_cluster in network[cluster][1]:
             weight = network[cluster][1][connected_cluster][0]
             f.write(cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n")
+
     f.close()
 
 
@@ -1029,7 +1033,14 @@ def main():
 
     if args.page_rank == "on":
         network = pagerank(network, teleport=args.node_normalization)
-    
+    elif args.page_rank == "off" and args.node_normalization is True:
+        for entry in network:
+            network[entry][0] = network[entry][-1]
+    else:
+        raise Exception("flags --node_normalization False and --page_rank off produces nonsense result")
+
+
+
     network_synteny_table = calculate_synteny_value(network_synteny_table, best_paths, network)
     
     if test_ids is not None:
@@ -1047,7 +1058,7 @@ def main():
         visualize_network(network, outfile=args.outfiles + "_Network.svg")
         output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Cluster.txt")
     elif args.network == "cys":
-        visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt")
+        visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt", mode=args.page_rank)
         write_std_data(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
         write_std_data(r_script_synteny_table, outfile=args.outfiles + "_Synteny_Table.txt")
         if test_synteny_table is not None:
