@@ -963,7 +963,6 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
 
     except lite.IntegrityError:
         print("pdna could not be performed successfully !!!!!!!!!!!!\n")
-    print()
     for data in short_seq_all:
         print(">" + data )
         print(short_seq_all[data])
