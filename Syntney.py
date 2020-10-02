@@ -39,7 +39,7 @@ def check_NCBI_format(fasta_header):
         raise Exception()
 
 
-def check_fasta_consistency(fasta_file, sqlite_handler):
+def check_input_consistency(fasta_file, sqlite_handler):
     f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
     tmp_file = f.name
     count = 0
@@ -89,7 +89,10 @@ def check_fasta_consistency(fasta_file, sqlite_handler):
                 "><ID>:c<start coordinate>-<end coordinate> <some comments>" + "\n" +
                 "(b)" + "\n" +
                 "><ID>/<start coordinate>-<end coordinate> <some comments>" + "\n" +
-                "<Sequence>" + "\n")
+                "<Sequence>" + "\n" +
+                "(c)" + "\n" +
+                "12 column BLAST Table" + "\n"
+                )
         exit()
 
     return tmp_file
@@ -989,9 +992,9 @@ def write_outfile_from_missing_ids_table(missing_ids_table, outfile):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--network_file", help="fasta file containing sequences used for network construction",
+    parser.add_argument("-i", "--network_file", help="fasta file containing sequences used for network construction or 12 column BLAST Table",
                         type=str)
-    parser.add_argument("-t", "--test_file", help="optional fasta file containing sequences that are checked for network match",
+    parser.add_argument("-t", "--test_file", help="optional fasta file containing sequences that are checked for network match or 12 column BLAST Table",
                         type=str, default=None)
     parser.add_argument("-c", "--cluster_script", help="path to synteny clustering R script",
                         type=str,
@@ -1023,9 +1026,9 @@ def main():
         shutil.rmtree(path_psi_out)
 
     # check the FASTA file(s) of consistency
-    proven_network_fasta = check_fasta_consistency(args.network_file, args.sqlite_script)
+    proven_network_fasta = check_input_consistency(args.network_file, args.sqlite_script)
     if args.test_file != None:
-        proven_test_fasta = check_fasta_consistency(args.test_file, args.sqlite_script)
+        proven_test_fasta = check_input_consistency(args.test_file, args.sqlite_script)
     else:
         proven_test_fasta = None
     
