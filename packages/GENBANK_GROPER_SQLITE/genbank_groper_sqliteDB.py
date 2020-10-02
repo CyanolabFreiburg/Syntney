@@ -43,8 +43,8 @@ Example4 (provides proteins/genes - accepts a tab separted file with -r and -c p
 - python genbank_groper_sqliteDB.py -a acc_file.txt -s sqlilte.db
 Example5 (provides 16sRNA sequences - accepts multiple input organisms):
 - python genbank_groper_sqliteDB.py -rRNA CP025541.3 CP025541.2 CP009125.1 -s sqlilte.db
-Example6 (provides partial DNA sequence(s) - accepts a tab separted file with tab separated sequence start, end and strands):
-- python genbank_groper_sqliteDB.py -pdna file.bed -s sqlilte.db
+Example6 (provides partial DNA sequence(s) - accepts a space separted input string with @ separated sequence start, end and strands):
+- python genbank_groper_sqliteDB.py -pdna CP011246.1@30@50@- CP011247.1@10@20@+ -s sqlilte.db
 
 Note: Please install the required dependencies
 """
@@ -705,10 +705,10 @@ def seq_extraction(dseq, positions, complement):
             short_seq = str(dna_seq)[start-1:stop]
             # name = str(name) + "_" + str(start) + "_" + str(stop)
             if strand == "+":
-		name = str(name) + ":" + str(start) + "-" + str(stop)
+                name = str(name) + ":" + str(start) + "-" + str(stop)
                 short_seq_all[name] = short_seq
             elif strand == "-":
-		name = str(name) + ":c" + str(stop) + "-" + str(start)
+                name = str(name) + ":c" + str(stop) + "-" + str(start)
                 short_seq_neg = short_seq
                 bases = list(short_seq_neg) 
                 bases = reversed([complement.get(base,base) for base in bases])
@@ -934,13 +934,24 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
             # positions = defaultdict(list)
             short_seq_all = dict()
             complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'} 
-
-            with open(args_extDNA, 'r') as fr:
-                for line in fr:
-                    positions = defaultdict(list)
-                    id, start, stop, strand = line.split()
-                    positions[id].append((int(start), int(stop), str(strand)))
-                    input_param = line.strip().split()[0]
+            # with open(args_extDNA, 'r') as fr:
+            for line in args_extDNA:
+                positions = defaultdict(list)
+                id, start, stop, strand = line.split("@")
+                positions[id].append((int(start), int(stop), str(strand)))
+                input_param = id.strip().split()[0]
+                cur.execute("SELECT dna FROM genome_dna WHERE acc=?", (input_param,))
+                dseq = cur.fetchall()
+                con.commit()
+                if dseq != []:
+                    data_extracted = seq_extraction(dseq, positions, complement)
+                    short_seq_all.update(data_extracted)
+                else:
+                    final_results = ""
+                    organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
+                    final_results += get_data(con, line[0], input_param,
+                                            int(args.position), int(args.range),
+                                            organism_col, ftp_lnk, organism_arr, chr_ref)
                     cur.execute("SELECT dna FROM genome_dna WHERE acc=?", (input_param,))
                     dseq = cur.fetchall()
                     con.commit()
@@ -948,19 +959,7 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
                         data_extracted = seq_extraction(dseq, positions, complement)
                         short_seq_all.update(data_extracted)
                     else:
-                        final_results = ""
-                        organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
-                        final_results += get_data(con, line[0], input_param,
-                                                int(args.position), int(args.range),
-                                                organism_col, ftp_lnk, organism_arr, chr_ref)
-                        cur.execute("SELECT dna FROM genome_dna WHERE acc=?", (input_param,))
-                        dseq = cur.fetchall()
-                        con.commit()
-                        if dseq != []:
-                            data_extracted = seq_extraction(dseq, positions, complement)
-                            short_seq_all.update(data_extracted)
-                        else:
-                            print("no sequence found for ", id)
+                        print("no sequence found for ", id)
 
     except lite.IntegrityError:
         print("pdna could not be performed successfully !!!!!!!!!!!!\n")
@@ -971,7 +970,6 @@ def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
 
     # close db connection
     con.close()
-
 
 
 if __name__ == "__main__":
@@ -1010,7 +1008,7 @@ if __name__ == "__main__":
     parser.add_argument("-pdna", "--extDNA", help="Parameter takes a\
                         file with ID, start_seq, end_seq, strand in \
                         tab separated format (like bed format) and returns a part of DNA!",\
-                        type=str, default="")
+                        type=str, nargs="*")
 
     args = parser.parse_args()
 
