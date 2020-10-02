@@ -12,7 +12,6 @@ import tempfile
 import re
 
 
-
 def check_NCBI_format(fasta_header):
     tmp_header = ""
     p = re.compile(r'.*:c?\d*-\d*')
@@ -40,19 +39,44 @@ def check_NCBI_format(fasta_header):
         raise Exception()
 
 
-def check_fasta_consistency(fasta_file):
+def check_fasta_consistency(fasta_file, sqlite_handler):
     f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
     tmp_file = f.name
     count = 0
     try:
+        # FASTA Format
         with open(fasta_file, "rU") as handle:
             for record in SeqIO.parse(handle, "fasta"):
                 new_header = check_NCBI_format(record.description)
                 f.write(">" + str(new_header) + "\n")
                 f.write(str(record.seq) + "\n")
                 count += 1
-        f.close()
-        
+        # check if file format correspond to a 12 column blast output
+        if count == 0:
+            build_string = ""
+            with open(fasta_file, "rU") as handle:
+                for line in handle:
+                    line = line.rstrip()
+                    tmp_arr = line.split("\t")
+                    if len(tmp_arr) == 12:
+                        seq_id = tmp_arr[1]
+                        start_pos = int(tmp_arr[8])
+                        end_pos = int(tmp_arr[9])
+                        if start_pos <= end_pos:
+                            build_string += str(seq_id) + "@" + str(start_pos) + "@" + str(end_pos) + "@" + "+" + " "
+                        else:
+                            build_string += str(seq_id) + "@" + str(end_pos) + "@" + str(start_pos) + "@" + "-" + " "
+                        count += 1
+                    else:
+                        count = 0
+                        break
+            # get FASTA from DB
+            if count > 0:
+                fasta_string = subprocess.getoutput("python3 " + str(sqlite_handler) + " -pdna " + str(build_string))
+                f.write(fasta_string)
+            f.close()
+
+        # no supported file format can be detected
         if count == 0:
             raise Exception()
     except:
@@ -998,10 +1022,10 @@ def main():
     if os.path.isdir(path_psi_out):
         shutil.rmtree(path_psi_out)
 
-    # check the FASTA file(s) for consistency
-    proven_network_fasta = check_fasta_consistency(args.network_file)
+    # check the FASTA file(s) of consistency
+    proven_network_fasta = check_fasta_consistency(args.network_file, args.sqlite_script)
     if args.test_file != None:
-        proven_test_fasta = check_fasta_consistency(args.test_file)
+        proven_test_fasta = check_fasta_consistency(args.test_file, args.sqlite_script)
     else:
         proven_test_fasta = None
     
