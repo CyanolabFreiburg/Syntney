@@ -42,7 +42,7 @@ conda activate Syntney
 		* Standard 12 column BLAST output
 -t --test_file
 		Input is optional. 
-		fasta file containing candidate sequences that are checked for 
+		* fasta file containing candidate sequences that are checked for 
 		network match sequences are written into outpath + _questionable.fasta
 		with the synteny value of each sequence added to the header. Header of 
 		each input sequence needs to have following form:
