@@ -33,11 +33,13 @@ conda activate Syntney
 **Syntney Parameters:**
 ```
 -i --network_file
-		fasta file containing sequences used for network construction
+		* fasta file containing sequences used for network construction
 		sequences are written into outpath + _network.fasta with the
 		synteny value of each sequence added to the header.
 		Header of each input sequence needs to have following form:
-			"NCBI ACC number":"#-starting nucleotide"-"#-end nucleotide"	
+			"NCBI ACC number":"#-starting nucleotide"-"#-end nucleotide"
+		OR:
+		* Standard 12 column BLAST output
 -t --test_file
 		Input is optional. 
 		fasta file containing candidate sequences that are checked for 
@@ -45,6 +47,8 @@ conda activate Syntney
 		with the synteny value of each sequence added to the header. Header of 
 		each input sequence needs to have following form:
 			"NCBI ACC number":"#-starting nucleotide"-"#-end nucleotide"
+		OR:
+		* Standard 12 column BLAST output
 -d --sqlite_db
                 File-Path to SQLite database
 -s --sqlite_script
