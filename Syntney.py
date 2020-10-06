@@ -401,7 +401,17 @@ def tree_construction(rRNA_data):
 
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
-        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")       
+        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")
+
+        # TMP
+        file_h = open(tmp_clustalo.name, "r")
+        for line in file_h:
+            line = line.rstrip()
+            print(line)
+        file_h.closed()
+        # TMP
+        exit()
+
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
         os.system("quicktree -in m " + str(tmp_clustalo.name) + " > " + str(tmp_quicktree.name))
@@ -894,26 +904,33 @@ def visualize_network(connectiondict, outfile):
 # {cluster: [pagerank, {connected_cluster1: [normalized number of connections, [list of Accessions with this node]],
 #            connected_cluster2: [...]], ...}, [list of accessions with "cluster"], teleport prob. to cluster], ...}
 def visualize_cytoscape_network(network, outfile, mode):
+    data = "#network.txt\n"
     f = open(outfile, "w")
     if mode == "on":
+        data += "cluster,connected cluster,PageRank, connection weight\n"
         f.write("cluster,connected cluster,PageRank, connection weight\n")
     elif mode == "off":
+        data += "cluster,connected cluster,Sum of branches, connection weight\n"
         f.write("cluster,connected cluster,Sum of branches, connection weight\n")
     for cluster in network:
         pagerank = network[cluster][0]
         for connected_cluster in network[cluster][1]:
             weight = network[cluster][1][connected_cluster][0]
+            data += cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n"
             f.write(cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n")
-
     f.close()
+    return data
 
 
 # the annotation file comes from the R-Script and is only used, if the user apply the -n --network parameter
-def write_std_data(network_annotation, outfile):
+def write_std_data(network_annotation, data_id, outfile):
+    data = "#" + str(data_id) + "\n"
     f = open(outfile, "w")
     for entry in network_annotation:
+        data += str(entry) + "\n"
         f.write(str(entry) + "\n")
     f.close()
+    return data
 
 
 # produces an output file containing the sequence identifiers with their up and downstream cluster numbers.
@@ -923,20 +940,27 @@ def write_std_data(network_annotation, outfile):
 #                       {downstream_ proteins},
 #                       [upstream_Cluster],
 #                       [downstream_Cluster]]}
-def output_cluster_synteny_file(syteny_table, outfile):
+def output_cluster_synteny_file(syteny_table, data_id, outfile):
+    data = "#" + str(data_id) + "\n"
     f = open(outfile, "w")
     f.write("identifier\tupstream cluster\tdownstream cluster\n")
     for entry in syteny_table:
         upstream = syteny_table[entry][2]
         downstream = syteny_table[entry][3]
+        data += entry + "\t"
         f.write(entry + "\t")
         for cluster in upstream:
+            data += cluster + ","
             f.write(cluster + ",")
+        data += "\t"
         f.write("\t")
         for cluster in downstream:
+            data += cluster + ","
             f.write(cluster + ",")
+        data += "\n"
         f.write("\n")
     f.close()
+    return data
 
 
 # normalizes the synteny value of the sequences used for network contruction to the max value of these.
@@ -1025,6 +1049,9 @@ def main():
     if os.path.isdir(path_psi_out):
         shutil.rmtree(path_psi_out)
 
+    # define variable to store crucial information for "R-Script"
+    aggregated_results = ""
+
     # check the FASTA file(s) of consistency
     proven_network_fasta = check_input_consistency(args.network_file, args.sqlite_script)
     if args.test_file != None:
@@ -1067,7 +1094,6 @@ def main():
         raise Exception("flags --node_normalization False and --page_rank off produces nonsense result")
 
 
-
     network_synteny_table = calculate_synteny_value(network_synteny_table, best_paths, network)
     
     if test_ids is not None:
@@ -1085,14 +1111,27 @@ def main():
         visualize_network(network, outfile=args.outfiles + "_Network.svg")
         output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Cluster.txt")
     elif args.network == "cys":
-        visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt", mode=args.page_rank)
-        write_std_data(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
-        write_std_data(r_script_synteny_table, outfile=args.outfiles + "_Synteny_Table.txt")
+        # essential
+        aggregated_results += visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt", mode=args.page_rank)
+        # _Network_Annotation.txt - only used for internal testing
+        aggregated_results += write_std_data(r_network_annotation_table, "network_annotation", outfile=args.outfiles + "_Network_Annotation.txt")
+        # _Synteny_Table.txt - only used for internal testing
+        aggregated_results += write_std_data(r_script_synteny_table, "synteny_table", outfile=args.outfiles + "_Synteny_Table.txt")
         if test_synteny_table is not None:
             output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Evaluated_Cluster.txt")
-        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "_Network_Cluster.txt")
+        # _Network_Cluster.txt - only used for internal testing
+        aggregated_results += output_cluster_synteny_file(network_synteny_table, "network_cluster", outfile=args.outfiles + "_Network_Cluster.txt")
     else:
         pass
+
+
+    ###### START TEST OUTPUT JENS
+    #print(aggregated_results)
+    handle = open("./aggregated_results.jens", "w")
+    for line in aggregated_results:
+        handle.write(line)
+    handle.close()
+    ###### END TEST OUTPUT JENS
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
