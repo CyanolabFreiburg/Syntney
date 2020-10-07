@@ -49,9 +49,7 @@ def check_input_consistency(fasta_file, sqlite_handler):
         # FASTA Format
         with open(fasta_file, "rU") as handle:
             for record in SeqIO.parse(handle, "fasta"):
-                print("IN > " + str(record.description))
                 new_header = check_NCBI_format(record.description)
-                print("OUT > " + str(new_header))
                 f.write(">" + str(new_header) + "\n")
                 f.write(str(record.seq) + "\n")
                 count += 1
@@ -405,15 +403,6 @@ def tree_construction(rRNA_data):
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
         os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")
-
-        # TMP
-        file_h = open(tmp_clustalo.name, "r")
-        for line in file_h:
-            line = line.rstrip()
-            print(line)
-        file_h.closed()
-        # TMP
-        exit()
 
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
