@@ -14,11 +14,13 @@ import re
 
 def check_NCBI_format(fasta_header):
     tmp_header = ""
-    p = re.compile(r'.*:c?\d*-\d*')
-    q = re.compile(r'.*/\d*-\d*')
+    p = re.compile(r'.{0,20}:c?\d*-\d*')
+    q = re.compile(r'.{0,20}/\d*-\d*')
     m = p.match(fasta_header)
     n = q.match(fasta_header)
 
+    print(m)
+    print(n)
     if m != None:
         if m.span()[0] == 0:
             return fasta_header
@@ -47,7 +49,9 @@ def check_input_consistency(fasta_file, sqlite_handler):
         # FASTA Format
         with open(fasta_file, "rU") as handle:
             for record in SeqIO.parse(handle, "fasta"):
+                print("IN > " + str(record.description))
                 new_header = check_NCBI_format(record.description)
+                print("OUT > " + str(new_header))
                 f.write(">" + str(new_header) + "\n")
                 f.write(str(record.seq) + "\n")
                 count += 1
@@ -94,7 +98,6 @@ def check_input_consistency(fasta_file, sqlite_handler):
                 "12 column BLAST Table" + "\n"
                 )
         exit()
-
     return tmp_file
 
 
@@ -1054,6 +1057,7 @@ def main():
 
     # check the FASTA file(s) of consistency
     proven_network_fasta = check_input_consistency(args.network_file, args.sqlite_script)
+
     if args.test_file != None:
         proven_test_fasta = check_input_consistency(args.test_file, args.sqlite_script)
     else:
@@ -1061,7 +1065,6 @@ def main():
     
     try:
         r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, r_rRNA_network_table, network_ids, test_ids = run_r_script(proven_network_fasta, proven_test_fasta, args.cluster_script, args.sqlite_db, args.sqlite_script, args.num_threads, synteny_window=str(args.synteny_window))
-        
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
 
