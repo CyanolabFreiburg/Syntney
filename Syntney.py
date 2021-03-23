@@ -19,8 +19,6 @@ def check_NCBI_format(fasta_header):
     m = p.match(fasta_header)
     n = q.match(fasta_header)
 
-    print(m)
-    print(n)
     if m != None:
         if m.span()[0] == 0:
             return fasta_header
