@@ -4,7 +4,7 @@ evolutionary related candidate sequences will get a high synteny score, whilst
 sequences with no homologous gene neighborhood will get a low score.
 
 The workflow was originally developed to work with the output of a GLASSgo sRNA
-search as list of trustable hologous sequences. Further the synteny of unknown 
+search as list of trustable homologous sequences. Further the synteny of unknown 
 sequences e.g. from a BLAST search can be scored.  To score sequences, the header 
 in the input FASTA file needs to start with the NCBI accession number followed by 
 a : and the starting position of the hit in the genome. 
