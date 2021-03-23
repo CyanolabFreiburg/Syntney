@@ -55,7 +55,9 @@ conda activate Syntney
 		File Path to SQLite script
 -o --outfiles
 		path and name where all outfiles are getting stored. Folder is NOT 
-		created if it is not present			
+		created if it is not present
+-x --num_threads 
+                Number of threads; default=1
 -c --cluster_script
 		path to the R synteny extraction script	
 -r --page_rank
