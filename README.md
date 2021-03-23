@@ -95,7 +95,7 @@ conda activate Syntney
 ```
 	
 **Example:**
-Before Syntney.py can be applied to a specific dataset; a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
+Before Syntney.py can be applied to a specific dataset, a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
 
 ```
 python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny
