@@ -88,10 +88,6 @@
                 componentSpacing: 30
               });
 
-              
-
-              
-
               /*
               this.nodes().forEach(function(node){
                 let size = Math.random()*120+30;
@@ -109,14 +105,40 @@
             style: [
               {
                 selector: 'node',
-                style: {
-                  'background-color': '#2B65EC',
-                  'label': 'data(label)',
-                  "text-valign": "center",
-                  "text-halign": "center",
+                css: {
+                  "font-size" : 14,
+                  "shape" : "roundrectangle",
+                  "border-opacity" : 1.0,
+                  "background-color" : "rgb(255,255,255)",
+                  "border-width" : 1.0,
+                  "color" : "rgb(0,0,0)",
+                  "text-valign" : "center",
+                  "text-halign" : "center",
+                  "font-family" : "Dialog.plain",
+                  "font-weight" : "normal",
+                  "text-opacity" : 1.0,
+                  "width" : 35.0,
+                  "height" : 35.0,
+                  "border-color" : "rgb(0,0,0)",
+                  "background-opacity" : 1.0,
+                  "content" : "data(filtered_names)"
+                }
+              },{
+                "selector" : "node[transparent = 'yes']",
+                "css" : {
+                  "border-opacity" : 0.19607843137254902
+                }
+              },{
+                "selector" : "node[cluster_id = 1]",
+                "css" : {
+                  "background-color" : "rgb(17,120,147)"
+                }
+              },{
+                "selector" : "node[cluster_id = 2]",
+                "css" : {
+                  "background-color" : "rgb(209,59,64)"
                 }
               },
-
               {
                 selector: 'edge',
                 style: {
@@ -140,1220 +162,560 @@
                 }
               }                 
             ], 
-
           elements: {
-            nodes: [
-              {
-              data: {
-                id: 0,
-                label: "cluster_57",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 1,
-                label: "sRNA",
-                pagerank: 0.01
-              }
-            },
-            {
-              data: {
-                id: 2,
-                label: "cluster_2",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 3,
-                label: "cluster_7",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 4,
-                label: "cluster_84",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 5,
-                label: "cluster_20",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 6,
-                label: "cluster_42",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 7,
-                label: "cluster_113",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 8,
-                label: "cluster_162",
-                pagerank: 0.006221677351812817
-              }
-            },
-            {
-              data: {
-                id: 9,
-                label: "cluster_51",
-                pagerank: 0.07976180399603468
-              }
-            },
-            {
-              data: {
-                id: 10,
-                label: "cluster_17",
-                pagerank: 0.04406571144123422
-              }
-            },
-            {
-              data: {
-                id: 11,
-                label: "cluster_106",
-                pagerank: 0.005143515178874443
-              }
-            },
-            {
-              data: {
-                id: 12,
-                label: "cluster_18",
-                pagerank: 0.006241594016549263
-              }
-            },
-            {
-              data: {
-                id: 13,
-                label: "cluster_139",
-                pagerank: 0.0395087422634917
-              }
-            },
-            {
-              data: {
-                id: 14,
-                label: "cluster_161",
-                pagerank: 0.00804045451748871
-              }
-            },
-            {
-              data: {
-                id: 15,
-                label: "cluster_155",
-                pagerank: 0.007300078554245298
-              }
-            },
-            {
-              data: {
-                id: 16,
-                label: "cluster_45",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 17,
-                label: "cluster_87",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 18,
-                label: "cluster_65",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 19,
-                label: "cluster_156",
-                pagerank: 0.0074375254641252464
-              }
-            },
-            {
-              data: {
-                id: 20,
-                label: "cluster_40",
-                pagerank: 0.013415281455409156
-              }
-            },
-            {
-              data: {
-                id: 21,
-                label: "cluster_78",
-                pagerank: 0.012685396718988658
-              }
-            },
-            {
-              data: {
-                id: 22,
-                label: "cluster_103",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 23,
-                label: "cluster_127",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 24,
-                label: "cluster_1",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 25,
-                label: "cluster_108",
-                pagerank: 0.010061461091557101
-              }
-            },
-            {
-              data: {
-                id: 26,
-                label: "cluster_129",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 27,
-                label: "cluster_109",
-                pagerank: 0.02347674254696593
-              }
-            },
-            {
-              data: {
-                id: 28,
-                label: "cluster_131",
-                pagerank: 0.0040668633191372
-              }
-            },
-            {
-              data: {
-                id: 29,
-                label: "cluster_58",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 30,
-                label: "cluster_128",
-                pagerank: 0.012702238500124495
-              }
-            },
-            {
-              data: {
-                id: 31,
-                label: "cluster_61",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 32,
-                label: "cluster_34",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 33,
-                label: "cluster_32",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 34,
-                label: "cluster_134",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 35,
-                label: "cluster_149",
-                pagerank: 0.012214816811098969
-              }
-            },
-            {
-              data: {
-                id: 36,
-                label: "cluster_82",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 37,
-                label: "cluster_30",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 38,
-                label: "cluster_115",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 39,
-                label: "cluster_133",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 40,
-                label: "cluster_10",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 41,
-                label: "cluster_74",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 42,
-                label: "cluster_21",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 43,
-                label: "cluster_97",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 44,
-                label: "cluster_91",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 45,
-                label: "cluster_132",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 46,
-                label: "cluster_144",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 47,
-                label: "cluster_158",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 48,
-                label: "cluster_35",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 49,
-                label: "cluster_114",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 50,
-                label: "cluster_141",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 51,
-                label: "cluster_93",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 52,
-                label: "cluster_39",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 53,
-                label: "cluster_11",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 54,
-                label: "cluster_123",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 55,
-                label: "cluster_145",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 56,
-                label: "cluster_146",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 57,
-                label: "cluster_140",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 58,
-                label: "cluster_44",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 59,
-                label: "cluster_85",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 60,
-                label: "cluster_138",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 61,
-                label: "cluster_31",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 62,
-                label: "cluster_83",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 63,
-                label: "cluster_47",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 64,
-                label: "cluster_98",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 65,
-                label: "cluster_63",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 66,
-                label: "cluster_153",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 67,
-                label: "cluster_38",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 68,
-                label: "cluster_71",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 69,
-                label: "cluster_9",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 70,
-                label: "cluster_112",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 71,
-                label: "cluster_37",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 72,
-                label: "cluster_19",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 73,
-                label: "cluster_99",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 74,
-                label: "cluster_53",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 75,
-                label: "cluster_80",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 76,
-                label: "cluster_165",
-                pagerank: 0.013415281455409312
-              }
-            },
-            {
-              data: {
-                id: 77,
-                label: "cluster_163",
-                pagerank: 0.010061461091556874
-              }
-            },
-            {
-              data: {
-                id: 78,
-                label: "cluster_29",
-                pagerank: 0.006707640727704819
-              }
-            },
-            {
-              data: {
-                id: 79,
-                label: "cluster_66",
-                pagerank: 0.003353820363852536
-              }
-            },
-            {
-              data: {
-                id: 80,
-                label: "cluster_5",
-                pagerank: 0.003353820363852536
-              }
-            }
-            ],
-            edges: [
-              {
-              data: {
-                source: 0,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 2,
-                target: 0,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 3,
-                target: 2,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 4,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 5,
-                target: 4,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 6,
-                target: 5,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 7,
-                target: 6,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 8,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 9,
-                target: 8,
-                weight: 0.03595526736209003
-              }
-            },
-            {
-              data: {
-                source: 9,
-                target: 1,
-                weight: 0.9640447326379099
-              }
-            },
-            {
-              data: {
-                source: 10,
-                target: 9,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 11,
-                target: 10,
-                weight: 0.4385602934433746
-              }
-            },
-            {
-              data: {
-                source: 11,
-                target: 12,
-                weight: 0.5614397065566255
-              }
-            },
-            {
-              data: {
-                source: 13,
-                target: 1,
-                weight: 0.7814941238459601
-              }
-            },
-            {
-              data: {
-                source: 13,
-                target: 14,
-                weight: 0.11862271196536162
-              }
-            },
-            {
-              data: {
-                source: 13,
-                target: 15,
-                weight: 0.09988316418867839
-              }
-            },
-            {
-              data: {
-                source: 16,
-                target: 13,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 17,
-                target: 16,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 18,
-                target: 17,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 19,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 20,
-                target: 19,
-                weight: 0.3044069640914037
-              }
-            },
-            {
-              data: {
-                source: 20,
-                target: 21,
-                weight: 0.6955930359085963
-              }
-            },
-            {
-              data: {
-                source: 22,
-                target: 20,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 23,
-                target: 22,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 24,
-                target: 10,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 25,
-                target: 10,
-                weight: 0.82212376525276
-              }
-            },
-            {
-              data: {
-                source: 25,
-                target: 11,
-                weight: 0.17787623474724
-              }
-            },
-            {
-              data: {
-                source: 26,
-                target: 25,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 14,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 27,
-                target: 13,
-                weight: 0.917468671679198
-              }
-            },
-            {
-              data: {
-                source: 27,
-                target: 1,
-                weight: 0.082531328320802
-              }
-            },
-            {
-              data: {
-                source: 28,
-                target: 27,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 29,
-                target: 25,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 30,
-                target: 27,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 31,
-                target: 30,
-                weight: 0.8936969071197259
-              }
-            },
-            {
-              data: {
-                source: 31,
-                target: 28,
-                weight: 0.10630309288027408
-              }
-            },
-            {
-              data: {
-                source: 32,
-                target: 31,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 21,
-                target: 9,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 33,
-                target: 20,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 34,
-                target: 13,
-                weight: 0.4526464861037352
-              }
-            },
-            {
-              data: {
-                source: 34,
-                target: 35,
-                weight: 0.5473535138962649
-              }
-            },
-            {
-              data: {
-                source: 36,
-                target: 34,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 37,
-                target: 36,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 12,
-                target: 9,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 38,
-                target: 9,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 39,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 40,
-                target: 39,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 41,
-                target: 40,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 42,
-                target: 41,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 43,
-                target: 10,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 44,
-                target: 43,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 45,
-                target: 10,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 46,
-                target: 45,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 47,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 48,
-                target: 47,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 49,
-                target: 48,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 50,
-                target: 49,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 15,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 51,
-                target: 27,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 52,
-                target: 10,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 53,
-                target: 52,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 54,
-                target: 30,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 55,
-                target: 10,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 56,
-                target: 55,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 57,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 58,
-                target: 57,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 59,
-                target: 58,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 60,
-                target: 59,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 35,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 61,
-                target: 9,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 62,
-                target: 61,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 63,
-                target: 62,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 64,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 65,
-                target: 64,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 66,
-                target: 65,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 67,
-                target: 66,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 68,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 69,
-                target: 68,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 70,
-                target: 69,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 71,
-                target: 70,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 72,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 73,
-                target: 72,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 74,
-                target: 73,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 75,
-                target: 74,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 76,
-                target: 1,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 77,
-                target: 76,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 78,
-                target: 77,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 79,
-                target: 78,
-                weight: 1.0
-              }
-            },
-            {
-              data: {
-                source: 80,
-                target: 35,
-                weight: 1.0
-              }
-            }
-            ]
+            "nodes" : [ 
+            {
+              "data" : {
+                "id" : "1809",
+                "shared_name" : "sRNA_1",
+                "name" : "sRNA_1",
+                "SUID" : 1809,
+                "id_original" : "sRNA_1",
+                "selected" : false
+              }
+            }, {
+              "data" : {
+                "id" : "1808",
+                "cluster_name" : "tnp",
+                "position_relative_to_sRNA" : "left",
+                "PageRank" : 0.006023538,
+                "orgs_accesion" : "CP026069.1,CP012692.1,CP013955.1,CP013953.1,CP011685.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,AP009324.1,BA000017.4,BA000018.3",
+                "transparent" : "no",
+                "tags" : "RK67_002320,RK83_004850,FORC27_0383,ASL15_01995,ASL16_01990,AB179_01975,SAI8T7_1002910,SAI7S6_1002910,SAI6T6_1002910,SAI5S5_1002900,SAI4T8_1002910,SAI3T3_1002910,SAI2T2_1002910,SAI1T1_2002910,SAHV_0381,SAV0384",
+                "shared_name" : "cluster_4_1",
+                "cluster_id" : 1,
+                "name" : "cluster_4_1",
+                "SUID" : 1808,
+                "id_original" : "cluster_4_1",
+                "orgs" : "Staphylococcus",
+                "selected" : false,
+                "filtered_names" : "tnp",
+                "classes": "node[cluster_id = 3]"
+              }
+            }, {
+                "data" : {
+                "id" : "1807",
+                "cluster_name" : "RK79_004240",
+                "position_relative_to_sRNA" : "left",
+                "PageRank" : 0.006023538,
+                "orgs_accesion" : "CP026067.1",
+                "transparent" : "no",
+                "tags" : "RK79_004240",
+                "shared_name" : "cluster_13_1",
+                "cluster_id" : 1,
+                "name" : "cluster_13_1",
+                "SUID" : 1807,
+                "id_original" : "cluster_13_1",
+                "orgs" : "Staphylococcus",
+                "selected" : false,
+                "filtered_names" : "RK79_004240"
+              }
+            }, {
+                "data" : {
+                  "id" : "1806",
+                  "cluster_name" : "BRL61_02160",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.006023538,
+                  "orgs_accesion" : "CP019117.1,BX571856.1,CP019574.1",
+                  "transparent" : "no",
+                  "tags" : "BRL61_02160,HMPREF0772_10110,SAR0402,SAU400_04584",
+                  "shared_name" : "cluster_12_1",
+                  "cluster_id" : 2,
+                  "name" : "cluster_12_1",
+                  "SUID" : 1806,
+                  "id_original" : "cluster_12_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "BRL61_02160"
+                }
+              }, {
+                "data" : {
+                  "id" : "1805",
+                  "cluster_name" : "B7437_02025",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.01204708,
+                  "orgs_accesion" : "CP020741.1,AJ938182.1,CP020713.1,CP022291.1,CP026077.1,CP026074.1,CP026076.1,CP026068.1,CP026063.1,CP022290.1,CP023500.1,CP023391.1,CP023390.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP018768.1,CP018766.1,CP003808.1",
+                  "transparent" : "no",
+                  "tags" : "B7437_02025,HMPREF0772_10111,SAB0334c,B7R57_09495,B7474_03035,B7473_07700,CFN13_01720,RK70_008410,RK65_005730,RL05_009635,RK77_005320,RK67_002325,RK63_006835,RK93_006340,RK85_003410,RK83_004845,RK82_013250,RK72_006500,BTN44_10945,A7U44_03655,ACO02_03295,A7U45_04310,A7U52_03615,A7U46_004870,A7Q05_04945,CFN12_01795,CO684_00715,CNH36_02170,CNH35_02170,A6V38_02120,BZK09_02490,BZK08_01765,BZK07_01775,BZJ79_02040,BXP64_01770,BJN19_02120,B7H15_02115,BSG37_02105,BSG38_02240,C248_0440",
+                  "shared_name" : "cluster_11_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_11_1",
+                  "SUID" : 1805,
+                  "id_original" : "cluster_11_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "B7437_02025"
+                }
+              }, {
+                "data" : {
+                  "id" : "1804",
+                  "cluster_name" : "AB478_01645",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.0479103,
+                  "orgs_accesion" : "CP017679.1,CP013182.1,CP009828.1,CP017685.1,CP012756.1,CP026066.1,CP017684.1,CP009361.1,CP013137.1,CP010402.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,CP011528.1,CP017682.1,CP017680.1,CP017677.1,CP017091.1,CP017090.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP009423.1,CP013218.1,CP015646.1,CP013959.1,CP013957.1,CP015173.1,CP013231.1,CP013621.1,CP013619.1,CP013616.1,CP010890.1,CP012593.1,CP011526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP000253.1,BX571857.1,BA000033.2",
+                  "transparent" : "no",
+                  "tags" : "AB478_01645,B7437_02020,SA40TW_01760,NI36_01845,AB525_01785,ACH32_09185,RK88_009495,RK78_004850,AB520_01770,BRL61_02150,KQ76_01815,SAR0401a,RK79_004235,ASU36_13675,RT44_01880,B7R57_09500,B7474_03040,B7473_07695,CFN13_01715,A7P66_09410,SAST39_00347,SAST38_00419,SAST41_00350,SAST40_00353,AA961_01730,RK70_008415,RK65_005725,RL05_009630,RK77_005325,RK67_002330,RK63_006830,RL00_009035,RK93_006345,RK85_003415,RK83_004840,RK82_013245,RK72_006495,BTN44_10950,A7U44_03660,ACO02_03300,A7U45_04315,A7U52_03620,A7U46_004875,A7Q05_04950,CFN12_01790,AB526_01835,AB454_01770,AB466_01705,CO684_00710,CNH36_02165,CNH35_02165,A2U18_01920,A2V17_01990,A6V38_02115,BZK09_02485,BZK08_01760,BZK07_01770,BZJ79_02035,BXP64_01765,BJN19_02115,B7H15_02110,AYM37_02035,AYM36_02000,AYM35_02000,AYM34_02035,AYM33_02000,AYM32_02035,AYM31_02035,AYM30_02035,AYM29_02035,AYM28_02035,AYM27_02035,AYM26_02035,AYM25_02035,AYM24_02035,AYM23_02035,AYM22_02035,AYM21_02035,AYM20_02035,AYM19_02035,AYM16_02035,AYM15_02035,AYM14_02035,AYM13_02035,AYM18_02035,BZP34_08920,BSG37_02100,BSG38_02235,LG33_02055,AS852_01915,A7327_02440,ASL18_02335,ASL17_02350,ASL15_01990,ASL16_01985,A5J11_05365,AS858_11955,AUC50_02165,AUC49_01925,AUC48_01925,RT87_01720,AM595_02160,AA076_01775,RM28_02030,RM27_02030,RM31_02035,QT38_02030,RM30_02030,RM29_02030,SAOUHSC_00368,SAS0360a",
+                  "shared_name" : "cluster_15_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_15_1",
+                  "SUID" : 1804,
+                  "id_original" : "cluster_15_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "AB478_01645"
+                }
+              }, {
+                "data" : {
+                  "id" : "1803",
+                  "cluster_name" : "guaA",
+                  "position_relative_to_sRNA" : "right",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01795,A7971_01660,SAMSHR1132_03620,SAA6159_00365,AB478_01680,B7437_02060,SA40TW_01795,Tgr_1126,NI36_01880,SA268_0361,SA40_0347,SA957_0362,RSAU_000335,M013TW_0370,AB525_01820,CKU_0345,ACH32_09220,CA347_406,RK88_009455,RK78_004890,SaO11_00397,AB520_01805,BRL61_02195,FORC1_0340,KQ76_01850,SAAG_00879,HMPREF0772_10103,SAOV_0413,SAR0409,RK79_004275,SAO46_00412,SAST43_00287,SAST42_00328,ASU36_13710,RT44_01915,ERS445051_00368,MS7_0380,SAB0341,CU118_13475,SABB155_03110,B7R57_09460,B7474_03000,B7473_07735,CFN13_01755,A7P66_09375,SAST39_00355,SAST38_00427,SAST41_00359,SAST40_00362,SAFDA_0350,AA961_01765,SARLGA251_03510,RK70_008375,RK65_005765,RL05_009670,RK77_005285,RK67_002285,RK63_006870,RL00_008995,RK93_006305,RK85_003375,RK83_004885,RK82_013285,RK72_006535,BTN44_10910,A7U44_2456,ACO02_0505,A7U45_2557,A7U52_2484,A7U46_004835,A7Q05_2503,SAU400_01524,CFN12_01830,AB526_01870,AB454_01805,AB466_01740,CO684_00750,CNH36_02205,CNH35_02205,JP02758_0344,JSA_0374,FORC40_0363,FORC45_0373,A2U18_01955,A2V17_02025,SANO10_347,FORC39_0355,A6V38_02155,BZK09_02525,BZK08_01800,BZK07_01810,BZJ79_02075,BXP64_01805,BJN19_02155,B7H15_02150,AYM37_02070,AYM36_02035,AYM35_02035,AYM34_02070,AYM33_02035,AYM32_02070,AYM31_02070,AYM30_02070,AYM29_02070,AYM28_02070,AYM27_02070,AYM26_02070,AYM25_02070,AYM24_02070,AYM23_02070,AYM22_02070,AYM21_02070,AYM20_02070,AYM19_02070,AYM16_02070,AYM15_02070,AYM14_02070,AYM13_02070,AYM18_02070,BZP34_08875,BSG37_02140,BSG38_02275,LG33_02090,EDCC5055_00364,AS852_01950,FORC26_0358,FORC27_0390,A7327_02475,ASL18_02370,ASL17_02385,ASL15_02030,ASL16_02025,AB179_02010,A5J11_05400,FORC12_2211,AS858_11990,SAMI_0381,SAGV88_00451,SAGV51_00454,SABE62_00449,SAHC1335_01212,SAHC1340_01133,AUC50_02200,AUC49_01960,AUC48_01960,ER12_001815,EQ80_001955,EP20_001955,RT87_01755,AM595_02195,EQ90_01870,EP54_02055,AA076_01810,FCFHV36_0368,SAJPND4_00390,SAJPND1_00390,RU53_369,RM28_02065,RM27_02065,RM31_02070,QT38_02065,RM30_02065,RM29_02065,SAGV69_02275,CH51_01995,SAXN108_0440,EX97_02005,ER16_01770,CH52_03765,AZ30_02000,SAZ172_0392,SAKOR_00389,SABB_02242,BN843_3960,SAI8T7_1002980,SAI7S6_1002980,SAI6T6_1002980,SAI5S5_1002970,SAI4T8_1002980,SAI3T3_1002980,SAI2T2_1002980,SAI1T1_2002980,C248_0447,SAEMRSA15_03430,ST398NM01_0468,SAVC_01705,SAT0131_00424,ECTR2_350,SA2981_0389,SAA6008_00390,SAPIG0468,SATW20_04570,SAAV_0358,USA300HOU_0414,SAHV_0388,NWMN_0381,SaurJH1_0449,SaurJH9_0438,SAV0391,SACOL0461,SAOUHSC_00375,SAUSA300_0389,SAS0367,SAMEA4384339_00348",
+                  "shared_name" : "cluster_1_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_1_1",
+                  "SUID" : 1803,
+                  "id_original" : "cluster_1_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "guaA"
+                }
+              }, {
+                "data" : {
+                  "id" : "1802",
+                  "cluster_name" : "guaB",
+                  "position_relative_to_sRNA" : "right",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01790,A7971_01655,SAMSHR1132_03610,SAA6159_00364,AB478_01675,B7437_02055,SA40TW_01790,Tgr_1127,NI36_01875,SA268_0360,SA40_0346,SA957_0361,RSAU_000334,M013TW_0369,AB525_01815,CKU_0344,ACH32_09215,CA347_405,RK88_009460,RK78_004885,SaO11_00396,AB520_01800,BRL61_02190,FORC1_0339,KQ76_01845,SAAG_00878,HMPREF0772_10104,SAOV_0412,SAR0408,RK79_004270,SAO46_00411,SAST43_00286,SAST42_00327,ASU36_13705,RT44_01910,ERS445051_00367,MS7_0379,SAB0340,CU118_13470,SABB155_03100,B7R57_09465,B7474_03005,B7473_07730,CFN13_01750,A7P66_09380,SAST39_00354,SAST38_00426,SAST41_00358,SAST40_00361,SAFDA_0349,AA961_01760,SARLGA251_03500,RK70_008380,RK65_005760,RL05_009665,RK77_005290,RK67_002290,RK63_006865,RL00_009000,RK93_006310,RK85_003380,RK83_004880,RK82_013280,RK72_006530,BTN44_10915,A7U44_2457,ACO02_0506,A7U45_2558,A7U52_2485,A7U46_004840,A7Q05_2504,SAU400_01525,CFN12_01825,AB526_01865,AB454_01800,AB466_01735,CO684_00745,CNH36_02200,CNH35_02200,JP02758_0343,JSA_0373,FORC40_0362,FORC45_0372,A2U18_01950,A2V17_02020,SANO10_346,FORC39_0354,A6V38_02150,BZK09_02520,BZK08_01795,BZK07_01805,BZJ79_02070,BXP64_01800,BJN19_02150,B7H15_02145,AYM37_02065,AYM36_02030,AYM35_02030,AYM34_02065,AYM33_02030,AYM32_02065,AYM31_02065,AYM30_02065,AYM29_02065,AYM28_02065,AYM27_02065,AYM26_02065,AYM25_02065,AYM24_02065,AYM23_02065,AYM22_02065,AYM21_02065,AYM20_02065,AYM19_02065,AYM16_02065,AYM15_02065,AYM14_02065,AYM13_02065,AYM18_02065,BZP34_08880,BSG37_02135,BSG38_02270,LG33_02085,EDCC5055_00363,AS852_01945,FORC26_0357,FORC27_0389,A7327_02470,ASL18_02365,ASL17_02380,ASL15_02025,ASL16_02020,AB179_02005,A5J11_05395,FORC12_2210,AS858_11985,SAMI_0380,SAGV88_00450,SAGV51_00453,SABE62_00448,SAHC1335_01211,SAHC1340_01132,AUC50_02195,AUC49_01955,AUC48_01955,ER12_001810,EQ80_001950,EP20_001950,RT87_01750,AM595_02190,EQ90_01865,EP54_02050,AA076_01805,FCFHV36_0367,SAJPND4_00389,SAJPND1_00389,RU53_368,RM28_02060,RM27_02060,RM31_02065,QT38_02060,RM30_02060,RM29_02060,SAGV69_02276,CH51_01990,SAXN108_0439,EX97_02000,ER16_01765,CH52_03770,AZ30_01995,SAZ172_0391,SAKOR_00388,SABB_02243,BN843_3950,SAI8T7_1002970,SAI7S6_1002970,SAI6T6_1002970,SAI5S5_1002960,SAI4T8_1002970,SAI3T3_1002970,SAI2T2_1002970,SAI1T1_2002970,C248_0446,SAEMRSA15_03420,ST398NM01_0467,SAVC_01700,SAT0131_00422,ECTR2_349,SA2981_0388,SAA6008_00389,SAPIG0467,SATW20_04560,SAAV_0357,USA300HOU_0413,SAHV_0387,NWMN_0380,SaurJH1_0448,SaurJH9_0437,SAV0390,SACOL0460,SAOUHSC_00374,SAUSA300_0388,SAS0366,SAMEA4384339_00347",
+                  "shared_name" : "cluster_2_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_2_1",
+                  "SUID" : 1802,
+                  "id_original" : "cluster_2_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "guaB"
+                }
+              }, {
+                "data" : {
+                  "id" : "1801",
+                  "cluster_name" : "pbuX",
+                  "position_relative_to_sRNA" : "right",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01785,A7971_01650,SAMSHR1132_03600,SAA6159_00363,AB478_01670,B7437_02050,SA40TW_01785,Tgr_1128,NI36_01870,SA268_0359,SA40_0345,SA957_0360,RSAU_000333,M013TW_0368,AB525_01810,CKU_0343,ACH32_09210,CA347_404,RK88_009465,RK78_004880,SaO11_00395,AB520_01795,BRL61_02185,FORC1_0338,KQ76_01840,SAAG_00877,HMPREF0772_10105,SAOV_0411,SAR0407,RK79_004265,SAO46_00410,SAST43_03741,SAST42_00326,ASU36_13700,RT44_01905,ERS445051_00366,MS7_0378,SAB0339,CU118_13465,SABB155_03090,B7R57_09470,B7474_03010,B7473_07725,CFN13_01745,A7P66_09385,SAST39_00353,SAST38_00425,SAST41_03763,SAST40_03770,SAFDA_0348,AA961_01755,SARLGA251_03490,RK70_008385,RK65_005755,RL05_009660,RK77_005295,RK67_002295,RK63_006860,RL00_009005,RK93_006315,RK85_003385,RK83_004875,RK82_013275,RK72_006525,BTN44_10920,A7U44_2458,ACO02_0507,A7U45_2559,A7U52_2486,A7U46_004845,A7Q05_2505,SAU400_01526,CFN12_01820,AB526_01860,AB454_01795,AB466_01730,CO684_00740,CNH36_02195,CNH35_02195,JP02758_0342,JSA_0372,FORC40_0361,FORC45_0371,A2U18_01945,A2V17_02015,SANO10_345,FORC39_0353,A6V38_02145,BZK09_02515,BZK08_01790,BZK07_01800,BZJ79_02065,BXP64_01795,BJN19_02145,B7H15_02140,AYM37_02060,AYM36_02025,AYM35_02025,AYM34_02060,AYM33_02025,AYM32_02060,AYM31_02060,AYM30_02060,AYM29_02060,AYM28_02060,AYM27_02060,AYM26_02060,AYM25_02060,AYM24_02060,AYM23_02060,AYM22_02060,AYM21_02060,AYM20_02060,AYM19_02060,AYM16_02060,AYM15_02060,AYM14_02060,AYM13_02060,AYM18_02060,BZP34_08885,BSG37_02130,BSG38_02265,LG33_02080,EDCC5055_00362,AS852_01940,FORC26_0356,FORC27_0388,A7327_02465,ASL18_02360,ASL17_02375,ASL15_02020,ASL16_02015,AB179_02000,A5J11_05390,FORC12_2209,AS858_11980,SAMI_0379,SAGV88_00449,SAGV51_03349,SABE62_00447,SAHC1335_03324,SAHC1340_01131,AUC50_02190,AUC49_01950,AUC48_01950,ER12_001805,EQ80_001945,EP20_001945,RT87_01745,AM595_02185,EQ90_01860,EP54_02045,AA076_01800,FCFHV36_0366,SAJPND4_00388,SAJPND1_00388,RU53_367,RM28_02055,RM27_02055,RM31_02060,QT38_02055,RM30_02055,RM29_02055,SAGV69_02277,CH51_01985,SAXN108_0438,EX97_01995,ER16_01760,CH52_03775,AZ30_01990,SAZ172_0390,SAKOR_00387,SABB_03214,BN843_3940,SAI8T7_1002960,SAI7S6_1002960,SAI6T6_1002960,SAI5S5_1002950,SAI4T8_1002960,SAI3T3_1002960,SAI2T2_1002960,SAI1T1_2002960,C248_0445,SAEMRSA15_03410,ST398NM01_0466,SAVC_01695,SAT0131_00421,ECTR2_348,SA2981_0387,SAA6008_00388,SAPIG0466,SATW20_04550,SAAV_0356,USA300HOU_0412,SAHV_0386,NWMN_0379,SaurJH1_0447,SaurJH9_0436,SAV0389,SACOL0459,SAOUHSC_00373,SAUSA300_0387,SAS0365,SAMEA4384339_00346",
+                  "shared_name" : "cluster_5_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_5_1",
+                  "SUID" : 1801,
+                  "id_original" : "cluster_5_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "pbuX"
+                }
+              }, {
+                "data" : {
+                  "id" : "1800",
+                  "cluster_name" : "xpt",
+                  "position_relative_to_sRNA" : "right",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01780,A7971_01645,SAMSHR1132_03590,SAA6159_00362,AB478_01665,B7437_02045,SA40TW_01780,Tgr_1129,NI36_01865,SA268_0358,SA40_0344,SA957_0359,RSAU_000332,M013TW_0367,AB525_01805,CKU_0342,ACH32_09205,CA347_403,RK88_009470,RK78_004875,SaO11_00394,AB520_01790,BRL61_02180,FORC1_0337,KQ76_01835,SAAG_00876,HMPREF0772_10106,SAOV_0410,SAR0406,RK79_004260,SAO46_00409,SAST43_00283,SAST42_00325,ASU36_13695,RT44_01900,ERS445051_00365,MS7_0377,SAB0338,CU118_13460,SABB155_03080,B7R57_09475,B7474_03015,B7473_07720,CFN13_01740,A7P66_09390,SAST39_00352,SAST38_00424,SAST41_00355,SAST40_00358,SAFDA_0347,AA961_01750,SARLGA251_03480,RK70_008390,RK65_005750,RL05_009655,RK77_005300,RK67_002300,RK63_006855,RL00_009010,RK93_006320,RK85_003390,RK83_004870,RK82_013270,RK72_006520,BTN44_10925,A7U44_2459,ACO02_0508,A7U45_2560,A7U52_2487,A7U46_004850,A7Q05_2506,SAU400_01527,CFN12_01815,AB526_01855,AB454_01790,AB466_01725,CO684_00735,CNH36_02190,CNH35_02190,JP02758_0341,JSA_0371,FORC40_0360,FORC45_0370,A2U18_01940,A2V17_02010,SANO10_344,FORC39_0352,A6V38_02140,BZK09_02510,BZK08_01785,BZK07_01795,BZJ79_02060,BXP64_01790,BJN19_02140,B7H15_02135,AYM37_02055,AYM36_02020,AYM35_02020,AYM34_02055,AYM33_02020,AYM32_02055,AYM31_02055,AYM30_02055,AYM29_02055,AYM28_02055,AYM27_02055,AYM26_02055,AYM25_02055,AYM24_02055,AYM23_02055,AYM22_02055,AYM21_02055,AYM20_02055,AYM19_02055,AYM16_02055,AYM15_02055,AYM14_02055,AYM13_02055,AYM18_02055,BZP34_08890,BSG37_02125,BSG38_02260,LG33_02075,EDCC5055_00361,AS852_01935,FORC26_0355,FORC27_0387,A7327_02460,ASL18_02355,ASL17_02370,ASL15_02015,ASL16_02010,AB179_01995,A5J11_05385,FORC12_2208,AS858_11975,SAMI_0378,SAGV88_00448,SAGV51_00451,SABE62_00446,SAHC1335_01209,SAHC1340_01130,AUC50_02185,AUC49_01945,AUC48_01945,ER12_001800,EQ80_001940,EP20_001940,RT87_01740,AM595_02180,EQ90_01855,EP54_02040,AA076_01795,FCFHV36_0365,SAJPND4_00387,SAJPND1_00387,RU53_366,RM28_02050,RM27_02050,RM31_02055,QT38_02050,RM30_02050,RM29_02050,SAGV69_02278,CH51_01980,SAXN108_0437,EX97_01990,ER16_01755,CH52_03780,AZ30_01985,SAZ172_0389,SAKOR_00386,SABB_02245,BN843_3930,SAI8T7_1002950,SAI7S6_1002950,SAI6T6_1002950,SAI5S5_1002940,SAI4T8_1002950,SAI3T3_1002950,SAI2T2_1002950,SAI1T1_2002950,C248_0444,SAEMRSA15_03400,ST398NM01_0465,SAVC_01690,SAT0131_00420,ECTR2_347,SA2981_0386,SAA6008_00387,SAPIG0465,SATW20_04540,SAAV_0355,USA300HOU_0411,SAHV_0385,NWMN_0378,SaurJH1_0446,SaurJH9_0435,SAV0388,SACOL0458,SAOUHSC_00372,SAUSA300_0386,SAS0364,SAMEA4384339_00345",
+                  "shared_name" : "cluster_9_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_9_1",
+                  "SUID" : 1800,
+                  "id_original" : "cluster_9_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "xpt"
+                }
+              }, {
+                "data" : {
+                  "id" : "1799",
+                  "cluster_name" : "tcyP",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.07784265,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP014791.1,CP006044.1,CP024649.1,CP009554.1,LN626917.1,CP002388.1,CP001996.1,CP025395.1,CP012974.1,CP012976.1,LN831036.1,CP003194.1,CP024998.1,LN854556.1,AP014942.1,FR821779.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,AP015012.1,CP015817.1,LT671859.1,CP013132.1,CP010998.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP007676.1,CP007672.1,CP007657.1,CP007674.1,CP007670.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009351.1,CP000736.1,CP000703.1,CP000046.1,CP000255.1,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01760,A7971_01625,SAMSHR1132_03550,SAA6159_00358,AB478_01640,B7437_02015,SA40TW_01755,Tgr_1133,NI36_01840,SA268_0354,SA40_0340,SA957_0355,RSAU_000326,M013TW_0363,AB525_01780,CKU_0337,ACH32_09180,CA347_399,RK88_009500,RK78_004845,SaO11_00390,AB520_01765,BRL61_02145,FORC1_0333,KQ76_01810,SAAG_00870,HMPREF0772_10112,SAOV_0406c,SAR0401,RK79_004230,SAO46_00405,SAST43_03058,SAST42_03264,ASU36_13670,RT44_01875,ERS445051_00360,MS7_0373,SAB0333c,CU118_13435,SABB155_03040,B7R57_09505,CFN13_01710,A7P66_09415,SAST39_03008,SAST38_03655,SAST41_03762,SAST40_03144,SAFDA_0343,AA961_01725,SARLGA251_03440,RK70_008420,RK65_005720,RL05_009625,RK77_005330,RK63_006825,RL00_009040,RK93_006350,RK85_003420,RK82_013240,RK72_006490,BTN44_10955,A7U44_2463,ACO02_0512,A7U45_2564,A7U52_2492,A7U46_004880,A7Q05_2510,SAU400_01534,CFN12_01785,AB526_01830,AB454_01765,AB466_01700,CO684_00705,CNH36_02160,CNH35_02160,JP02758_0337,JSA_0367,FORC40_0356,FORC45_0366,A2U18_01915,A2V17_01985,SANO10_340,FORC39_0348,A6V38_02110,BZK09_02480,BZK08_01755,BZK07_01765,BZJ79_02030,BXP64_01760,BJN19_02110,B7H15_02105,AYM37_02030,AYM36_01995,AYM35_01995,AYM34_02030,AYM33_01995,AYM32_02030,AYM31_02030,AYM30_02030,AYM29_02030,AYM28_02030,AYM27_02030,AYM26_02030,AYM25_02030,AYM24_02030,AYM23_02030,AYM22_02030,AYM21_02030,AYM20_02030,AYM19_02030,AYM16_02030,AYM15_02030,AYM14_02030,AYM13_02030,AYM18_02030,BSG37_02095,BSG38_02230,LG33_02050,EDCC5055_00356,AS852_01910,FORC26_0351,A7327_02435,ASL18_02330,ASL17_02345,A5J11_05360,FORC12_2204,AS858_11950,SAMI_0374,SAGV88_00443,SAGV51_03348,SABE62_00441,SAHC1335_03323,SAHC1340_01125,AUC50_02160,AUC49_01920,AUC48_01920,ER12_001780,EQ80_001920,EP20_001920,RT87_01715,AM595_02155,EQ90_01835,EP54_02020,AA076_01770,FCFHV36_0361,SAJPND4_00383,SAJPND1_00383,RU53_361,RM28_02025,RM27_02025,RM31_02030,QT38_02025,RM30_02025,RM29_02025,SAGV69_02283,CH51_01960,SAXN108_0433,EX97_01970,ER16_01735,CH52_03800,AZ30_01965,SAZ172_0385,SAKOR_00382,SABB_03215,BN843_3890,C248_0439,SAEMRSA15_03360,ST398NM01_0461,SAVC_01670,SAT0131_00416,ECTR2_343,SA2981_0382,SAA6008_00383,SAPIG0461,SATW20_04500,SAAV_0350,USA300HOU_0406,NWMN_0374,SaurJH1_0442,SaurJH9_0431,SACOL0454,SAOUHSC_00367,SAUSA300_0382,SAS0360,SAMEA4384339_00340",
+                  "shared_name" : "cluster_3_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_3_1",
+                  "SUID" : 1799,
+                  "id_original" : "cluster_3_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "tcyP"
+                }
+              }, {
+                "data" : {
+                  "id" : "1798",
+                  "cluster_name" : "JH4899_0368",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01765,A7971_01630,SAMSHR1132_03560,SAA6159_00359,AB478_01650,B7437_02030,SA40TW_01765,Tgr_1132,NI36_01850,SA268_0355,SA40_0341,SA957_0356,RSAU_000328,M013TW_0364,AB525_01790,CKU_0339,ACH32_09190,CA347_400,RK88_009485,RK78_004860,SaO11_00391,AB520_01775,BRL61_02165,FORC1_0334,KQ76_01820,SAAG_00873,HMPREF0772_10109,SAOV_0407c,SAR0403,RK79_004245,SAO46_00406,SAST43_00279,SAST42_00321,ASU36_13680,RT44_01885,ERS445051_00361,MS7_0374,SAB0335c,CU118_13445,SABB155_03050,B7R57_09490,B7474_03030,B7473_07705,CFN13_01725,A7P66_09405,SAST39_00348,SAST38_00420,SAST41_00351,SAST40_00354,SAFDA_0344,AA961_01735,SARLGA251_03450,RK70_008405,RK65_005735,RL05_009640,RK77_005315,RK67_002315,RK63_006840,RL00_009025,RK93_006335,RK85_003405,RK83_004855,RK82_013255,RK72_006505,BTN44_10940,A7U44_2462,ACO02_0511,A7U45_2563,A7U52_2491,A7U46_004865,A7Q05_2509,SAU400_01530,CFN12_01800,AB526_01840,AB454_01775,AB466_01710,CO684_00720,CNH36_02175,CNH35_02175,JP02758_0338,JSA_0368,FORC40_0357,FORC45_0367,A2U18_01925,A2V17_01995,SANO10_341,FORC39_0349,A6V38_02125,BZK09_02495,BZK08_01770,BZK07_01780,BZJ79_02045,BXP64_01775,BJN19_02125,B7H15_02120,AYM37_02040,AYM36_02005,AYM35_02005,AYM34_02040,AYM33_02005,AYM32_02040,AYM31_02040,AYM30_02040,AYM29_02040,AYM28_02040,AYM27_02040,AYM26_02040,AYM25_02040,AYM24_02040,AYM23_02040,AYM22_02040,AYM21_02040,AYM20_02040,AYM19_02040,AYM16_02040,AYM15_02040,AYM14_02040,AYM13_02040,AYM18_02040,BZP34_08905,BSG37_02110,BSG38_02245,LG33_02060,EDCC5055_00357,AS852_01920,FORC26_0352,FORC27_0384,A7327_02445,ASL18_02340,ASL17_02355,ASL15_02000,ASL16_01995,AB179_01980,A5J11_05370,FORC12_2205,AS858_11960,SAMI_0375,SAGV88_00444,SAGV51_00447,SABE62_00442,SAHC1335_01205,SAHC1340_01126,AUC50_02170,AUC49_01930,AUC48_01930,ER12_001785,EQ80_001925,EP20_001925,RT87_01725,AM595_02165,EQ90_01840,EP54_02025,AA076_01780,FCFHV36_0362,SAJPND4_00384,SAJPND1_00384,RU53_362,RM28_02035,RM27_02035,RM31_02040,QT38_02035,RM30_02035,RM29_02035,SAGV69_02282,CH51_01965,SAXN108_0434,EX97_01975,ER16_01740,CH52_03795,AZ30_01970,SAZ172_0386,SAKOR_00383,SABB_02248,BN843_3900,SAI8T7_1002920,SAI7S6_1002920,SAI6T6_1002920,SAI5S5_1002910,SAI4T8_1002920,SAI3T3_1002920,SAI2T2_1002920,SAI1T1_2002920,C248_0441,SAEMRSA15_03370,ST398NM01_0462,SAVC_01675,SAT0131_00417,ECTR2_344,SA2981_0383,SAA6008_00384,SAPIG0462,SATW20_04510,SAAV_0351,USA300HOU_0408,SAHV_0382,NWMN_0375,SaurJH1_0443,SaurJH9_0432,SAV0385,SACOL0455,SAOUHSC_00369,SAUSA300_0383,SAS0361,SAMEA4384339_00341",
+                  "shared_name" : "cluster_6_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_6_1",
+                  "SUID" : 1798,
+                  "id_original" : "cluster_6_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "JH4899_0368"
+                }
+              }, {
+                "data" : {
+                  "id" : "1797",
+                  "cluster_name" : "JH4899_0369",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01770,A7971_01635,SAMSHR1132_03570,SAA6159_00360,AB478_01655,B7437_02035,SA40TW_01770,Tgr_1131,NI36_01855,SA268_0356,SA40_0342,SA957_0357,RSAU_000329,M013TW_0365,AB525_01795,CKU_0340,ACH32_09195,CA347_401,RK88_009480,RK78_004865,SaO11_00392,AB520_01780,BRL61_02170,FORC1_0335,KQ76_01825,SAAG_00874,HMPREF0772_10108,SAOV_0408c,SAR0404,RK79_004250,SAO46_00407,SAST43_00280,SAST42_00322,ASU36_13685,RT44_01890,ERS445051_00362,MS7_0375,SAB0336c,CU118_13450,SABB155_03060,B7R57_09485,B7474_03025,B7473_07710,CFN13_01730,A7P66_09400,SAST39_00349,SAST38_00421,SAST41_00352,SAST40_00355,SAFDA_0345,AA961_01740,SARLGA251_03460,RK70_008400,RK65_005740,RL05_009645,RK77_005310,RK67_002310,RK63_006845,RL00_009020,RK93_006330,RK85_003400,RK83_004860,RK82_013260,RK72_006510,BTN44_10935,A7U44_2461,ACO02_0510,A7U45_2562,A7U52_2490,A7U46_004860,A7Q05_2508,SAU400_01529,CFN12_01805,AB526_01845,AB454_01780,AB466_01715,CO684_00725,CNH36_02180,CNH35_02180,JP02758_0339,JSA_0369,FORC40_0358,FORC45_0368,A2U18_01930,A2V17_02000,SANO10_342,FORC39_0350,A6V38_02130,BZK09_02500,BZK08_01775,BZK07_01785,BZJ79_02050,BXP64_01780,BJN19_02130,B7H15_02125,AYM37_02045,AYM36_02010,AYM35_02010,AYM34_02045,AYM33_02010,AYM32_02045,AYM31_02045,AYM30_02045,AYM29_02045,AYM28_02045,AYM27_02045,AYM26_02045,AYM25_02045,AYM24_02045,AYM23_02045,AYM22_02045,AYM21_02045,AYM20_02045,AYM19_02045,AYM16_02045,AYM15_02045,AYM14_02045,AYM13_02045,AYM18_02045,BZP34_08900,BSG37_02115,BSG38_02250,LG33_02065,EDCC5055_00358,AS852_01925,FORC26_0353,FORC27_0385,A7327_02450,ASL18_02345,ASL17_02360,ASL15_02005,ASL16_02000,AB179_01985,A5J11_05375,FORC12_2206,AS858_11965,SAMI_0376,SAGV88_00445,SAGV51_00448,SABE62_00443,SAHC1335_01206,SAHC1340_01127,AUC50_02175,AUC49_01935,AUC48_01935,ER12_001790,EQ80_001930,EP20_001930,RT87_01730,AM595_02170,EQ90_01845,EP54_02030,AA076_01785,FCFHV36_0363,SAJPND4_00385,SAJPND1_00385,RU53_363,RM28_02040,RM27_02040,RM31_02045,QT38_02040,RM30_02040,RM29_02040,SAGV69_02281,CH51_01970,SAXN108_0435,EX97_01980,ER16_01745,CH52_03790,AZ30_01975,SAZ172_0387,SAKOR_00384,SABB_02247,BN843_3910,SAI8T7_1002930,SAI7S6_1002930,SAI6T6_1002930,SAI5S5_1002920,SAI4T8_1002930,SAI3T3_1002930,SAI2T2_1002930,SAI1T1_2002930,C248_0442,SAEMRSA15_03380,ST398NM01_0463,SAVC_01680,SAT0131_00418,ECTR2_345,SA2981_0384,SAA6008_00385,SAPIG0463,SATW20_04520,SAAV_0352,USA300HOU_0409,SAHV_0383,NWMN_0376,SaurJH1_0444,SaurJH9_0433,SAV0386,SACOL0456,SAOUHSC_00370,SAUSA300_0384,SAS0362,SAMEA4384339_00342",
+                  "shared_name" : "cluster_8_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_8_1",
+                  "SUID" : 1797,
+                  "id_original" : "cluster_8_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "JH4899_0369"
+                }
+              }, {
+                "data" : {
+                  "id" : "1796",
+                  "cluster_name" : "yflT",
+                  "position_relative_to_sRNA" : "left",
+                  "PageRank" : 0.1197294,
+                  "orgs_accesion" : "CP023076.1,CP015758.1,FR821777.2,CP002114.2,CP017679.1,CP020741.1,CP013182.1,CP009828.1,CP006630.1,CP003604.1,CP003603.1,CP006706.1,CP003166.1,CP017685.1,CP014791.1,CP012756.1,CP006044.1,CP026066.1,CP024649.1,CP017684.1,CP019117.1,CP009554.1,LN626917.1,CP009361.1,CP002388.1,CP001996.1,BX571856.1,CP026067.1,CP025395.1,CP012974.1,CP012976.1,CP013137.1,CP010402.1,LN831036.1,CP003194.1,AJ938182.1,CP024998.1,LN854556.1,CP020713.1,CP022291.1,CP012970.1,CP012972.1,CP012978.1,CP012979.1,AP014942.1,CP011528.1,FR821779.1,CP026077.1,CP026074.1,CP026076.1,CP026069.1,CP026068.1,CP026063.1,CP019574.1,CP022290.1,CP017682.1,CP017680.1,CP017677.1,CP023500.1,CP023391.1,CP023390.1,AP017922.1,AP014921.1,CP016398.1,CP017115.1,CP017091.1,CP017090.1,AP015012.1,CP015817.1,CP015447.1,CP019595.1,CP019594.1,CP019593.1,CP019592.1,CP019591.1,CP019590.1,CP020619.1,CP014444.1,CP014441.1,CP014438.1,CP014435.1,CP014432.1,CP014429.1,CP014426.1,CP014423.1,CP014420.1,CP014415.1,CP014412.1,CP014409.1,CP014407.1,CP014402.1,CP014397.1,CP014392.1,CP014387.1,CP014384.1,CP014381.1,CP014371.1,CP014368.1,CP014365.1,CP014362.1,CP014376.1,CP018768.1,CP018766.1,CP009423.1,LT671859.1,CP013218.1,CP013132.1,CP012692.1,CP015646.1,CP013959.1,CP013957.1,CP013955.1,CP013953.1,CP011685.1,CP015173.1,CP010998.1,CP013231.1,AP017320.1,CP012018.1,CP012015.1,CP012013.1,CP012012.1,CP012011.1,CP013621.1,CP013619.1,CP013616.1,CP007676.1,CP007672.1,CP007657.1,CP010890.1,CP012593.1,CP007674.1,CP007670.1,CP011526.1,CP011147.1,AP014653.1,AP014652.1,CP010526.1,CP010300.1,CP010299.1,CP010298.1,CP010297.1,CP010296.1,CP010295.1,CP007499.1,CP007447.1,CP007690.1,CP007659.1,CP007176.1,CP006838.1,CP003979.1,CP005288.1,HF937103.1,HE579073.1,HE579071.1,HE579069.1,HE579067.1,HE579065.1,HE579063.1,HE579061.1,HE579059.1,CP003808.1,HE681097.1,CP003045.1,CP003033.1,CP002643.1,FR714927.1,CP001844.2,CP002120.1,AM990992.1,FN433596.1,CP001781.1,CP000730.1,AP009324.1,AP009351.1,CP000736.1,CP000703.1,BA000017.4,CP000046.1,CP000253.1,CP000255.1,BX571857.1,BA000018.3,BA000033.2,LT906460.1",
+                  "transparent" : "no",
+                  "tags" : "CJ017_01775,A7971_01640,SAMSHR1132_03580,SAA6159_00361,AB478_01660,B7437_02040,SA40TW_01775,Tgr_1130,NI36_01860,SA268_0357,SA40_0343,SA957_0358,RSAU_000330,M013TW_0366,AB525_01800,CKU_0341,ACH32_09200,CA347_402,RK88_009475,RK78_004870,SaO11_00393,AB520_01785,BRL61_02175,FORC1_0336,KQ76_01830,SAAG_00875,HMPREF0772_10107,SAOV_0409c,SAR0405,RK79_004255,SAO46_00408,SAST43_00281,SAST42_00323,ASU36_13690,RT44_01895,ERS445051_00363,MS7_0376,SAB0337c,CU118_13455,SABB155_03070,B7R57_09480,B7474_03020,B7473_07715,CFN13_01735,A7P66_09395,SAST39_00350,SAST38_00422,SAST41_00353,SAST40_00356,SAFDA_0346,AA961_01745,SARLGA251_03470,RK70_008395,RK65_005745,RL05_009650,RK77_005305,RK67_002305,RK63_006850,RL00_009015,RK93_006325,RK85_003395,RK83_004865,RK82_013265,RK72_006515,BTN44_10930,A7U44_2460,ACO02_0509,A7U45_2561,A7U52_2489,A7U46_004855,A7Q05_2507,SAU400_01528,CFN12_01810,AB526_01850,AB454_01785,AB466_01720,CO684_00730,CNH36_02185,CNH35_02185,JP02758_0340,JSA_0370,FORC40_0359,FORC45_0369,A2U18_01935,A2V17_02005,SANO10_343,FORC39_0351,A6V38_02135,BZK09_02505,BZK08_01780,BZK07_01790,BZJ79_02055,BXP64_01785,BJN19_02135,B7H15_02130,AYM37_02050,AYM36_02015,AYM35_02015,AYM34_02050,AYM33_02015,AYM32_02050,AYM31_02050,AYM30_02050,AYM29_02050,AYM28_02050,AYM27_02050,AYM26_02050,AYM25_02050,AYM24_02050,AYM23_02050,AYM22_02050,AYM21_02050,AYM20_02050,AYM19_02050,AYM16_02050,AYM15_02050,AYM14_02050,AYM13_02050,AYM18_02050,BZP34_08895,BSG37_02120,BSG38_02255,LG33_02070,EDCC5055_00359,AS852_01930,FORC26_0354,FORC27_0386,A7327_02455,ASL18_02350,ASL17_02365,ASL15_02010,ASL16_02005,AB179_01990,A5J11_05380,FORC12_2207,AS858_11970,SAMI_0377,SAGV88_00446,SAGV51_00449,SABE62_00444,SAHC1335_01207,SAHC1340_01128,AUC50_02180,AUC49_01940,AUC48_01940,ER12_001795,EQ80_001935,EP20_001935,RT87_01735,AM595_02175,EQ90_01850,EP54_02035,AA076_01790,FCFHV36_0364,SAJPND4_00386,SAJPND1_00386,RU53_364,RM28_02045,RM27_02045,RM31_02050,QT38_02045,RM30_02045,RM29_02045,SAGV69_02280,CH51_01975,SAXN108_0436,EX97_01985,ER16_01750,CH52_03785,AZ30_01980,SAZ172_0388,SAKOR_00385,SABB_02246,BN843_3920,SAI8T7_1002940,SAI7S6_1002940,SAI6T6_1002940,SAI5S5_1002930,SAI4T8_1002940,SAI3T3_1002940,SAI2T2_1002940,SAI1T1_2002940,C248_0443,SAEMRSA15_03390,ST398NM01_0464,SAVC_01685,SAT0131_00419,ECTR2_346,SA2981_0385,SAA6008_00386,SAPIG0464,SATW20_04530,SAAV_0353,USA300HOU_0410,SAHV_0384,NWMN_0377,SaurJH1_0445,SaurJH9_0434,SAV0387,SACOL0457,SAOUHSC_00371,SAUSA300_0385,SAS0363,SAMEA4384339_00343",
+                  "shared_name" : "cluster_10_1",
+                  "cluster_id" : 1,
+                  "name" : "cluster_10_1",
+                  "SUID" : 1796,
+                  "id_original" : "cluster_10_1",
+                  "orgs" : "Staphylococcus",
+                  "selected" : false,
+                  "filtered_names" : "yflT"
+                }
+              } ],
+
+              "edges" : [ {
+                "data" : {
+                  "id" : "1822",
+                  "source" : "1808",
+                  "target" : "1798",
+                  "orientation" : "left",
+                  "shared_interaction" : "interacts with",
+                  "data_key_column" : 1822,
+                  "source_original" : "cluster_4_1",
+                  "connection_weight" : 1,
+                  "transparent" : "no",
+                  "Sum_of_branches" : 0.006023538,
+                  "target_original" : "cluster_6_1",
+                  "shared_name" : "cluster_4_1 (interacts with) cluster_6_1",
+                  "combined_weight" : 0.006023538,
+                  "cluster_id" : 1,
+                  "name" : "cluster_4_1 (interacts with) cluster_6_1",
+                  "interaction" : "interacts with",
+                  "SUID" : 1822,
+                  "selected" : false
+                }
+              }, {
+      "data" : {
+        "id" : "1821",
+        "source" : "1807",
+        "target" : "1798",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1821,
+        "source_original" : "cluster_13_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.006023538,
+        "target_original" : "cluster_6_1",
+        "shared_name" : "cluster_13_1 (interacts with) cluster_6_1",
+        "combined_weight" : 0.006023538,
+        "cluster_id" : 1,
+        "name" : "cluster_13_1 (interacts with) cluster_6_1",
+        "interaction" : "interacts with",
+        "SUID" : 1821,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1820",
+        "source" : "1806",
+        "target" : "1798",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1820,
+        "source_original" : "cluster_12_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.006023538,
+        "target_original" : "cluster_6_1",
+        "shared_name" : "cluster_12_1 (interacts with) cluster_6_1",
+        "combined_weight" : 0.006023538,
+        "cluster_id" : 1,
+        "name" : "cluster_12_1 (interacts with) cluster_6_1",
+        "interaction" : "interacts with",
+        "SUID" : 1820,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1819",
+        "source" : "1805",
+        "target" : "1798",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1819,
+        "source_original" : "cluster_11_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.01204708,
+        "target_original" : "cluster_6_1",
+        "shared_name" : "cluster_11_1 (interacts with) cluster_6_1",
+        "combined_weight" : 0.01204708,
+        "cluster_id" : 1,
+        "name" : "cluster_11_1 (interacts with) cluster_6_1",
+        "interaction" : "interacts with",
+        "SUID" : 1819,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1818",
+        "source" : "1804",
+        "target" : "1798",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1818,
+        "source_original" : "cluster_15_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.0479103,
+        "target_original" : "cluster_6_1",
+        "shared_name" : "cluster_15_1 (interacts with) cluster_6_1",
+        "combined_weight" : 0.0479103,
+        "cluster_id" : 1,
+        "name" : "cluster_15_1 (interacts with) cluster_6_1",
+        "interaction" : "interacts with",
+        "SUID" : 1818,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1817",
+        "source" : "1803",
+        "target" : "1802",
+        "orientation" : "right",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1817,
+        "source_original" : "cluster_1_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "cluster_2_1",
+        "shared_name" : "cluster_1_1 (interacts with) cluster_2_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_1_1 (interacts with) cluster_2_1",
+        "interaction" : "interacts with",
+        "SUID" : 1817,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1816",
+        "source" : "1802",
+        "target" : "1801",
+        "orientation" : "right",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1816,
+        "source_original" : "cluster_2_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "cluster_5_1",
+        "shared_name" : "cluster_2_1 (interacts with) cluster_5_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_2_1 (interacts with) cluster_5_1",
+        "interaction" : "interacts with",
+        "SUID" : 1816,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1815",
+        "source" : "1801",
+        "target" : "1800",
+        "orientation" : "right",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1815,
+        "source_original" : "cluster_5_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "cluster_9_1",
+        "shared_name" : "cluster_5_1 (interacts with) cluster_9_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_5_1 (interacts with) cluster_9_1",
+        "interaction" : "interacts with",
+        "SUID" : 1815,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1814",
+        "source" : "1800",
+        "target" : "1809",
+        "orientation" : "right",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1814,
+        "source_original" : "cluster_9_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "sRNA_1",
+        "shared_name" : "cluster_9_1 (interacts with) sRNA_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_9_1 (interacts with) sRNA_1",
+        "interaction" : "interacts with",
+        "SUID" : 1814,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1813",
+        "source" : "1799",
+        "target" : "1798",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1813,
+        "source_original" : "cluster_3_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.07784265,
+        "target_original" : "cluster_6_1",
+        "shared_name" : "cluster_3_1 (interacts with) cluster_6_1",
+        "combined_weight" : 0.07784265,
+        "cluster_id" : 1,
+        "name" : "cluster_3_1 (interacts with) cluster_6_1",
+        "interaction" : "interacts with",
+        "SUID" : 1813,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1812",
+        "source" : "1798",
+        "target" : "1797",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1812,
+        "source_original" : "cluster_6_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "cluster_8_1",
+        "shared_name" : "cluster_6_1 (interacts with) cluster_8_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_6_1 (interacts with) cluster_8_1",
+        "interaction" : "interacts with",
+        "SUID" : 1812,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1811",
+        "source" : "1797",
+        "target" : "1796",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1811,
+        "source_original" : "cluster_8_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "cluster_10_1",
+        "shared_name" : "cluster_8_1 (interacts with) cluster_10_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_8_1 (interacts with) cluster_10_1",
+        "interaction" : "interacts with",
+        "SUID" : 1811,
+        "selected" : false
+      }
+    }, {
+      "data" : {
+        "id" : "1810",
+        "source" : "1796",
+        "target" : "1809",
+        "orientation" : "left",
+        "shared_interaction" : "interacts with",
+        "data_key_column" : 1810,
+        "source_original" : "cluster_10_1",
+        "connection_weight" : 1,
+        "transparent" : "no",
+        "Sum_of_branches" : 0.1197294,
+        "target_original" : "sRNA_1",
+        "shared_name" : "cluster_10_1 (interacts with) sRNA_1",
+        "combined_weight" : 0.1197294,
+        "cluster_id" : 1,
+        "name" : "cluster_10_1 (interacts with) sRNA_1",
+        "interaction" : "interacts with",
+        "SUID" : 1810,
+        "selected" : false
+      }
+    } ]
+            
           }
           });
 
 
-          var max = cy.nodes().max(function(ele){
-            //return this.data('pagerank');
-          });
 
-          console.log(max.value)
+          // determine the maximum pagerank
+          var maxPageRank = cy.nodes().max(function(ele){
+            return ele.data('PageRank');
+          });
 
           cy.nodes().forEach(function(node){
-              //node.data('width', node.data('pagerank') + 10);
+            //console.log(node.data())
+            if(node.data().hasOwnProperty('cluster_id')) {
+              var cid = node.data().cluster_id
+ 
+              var pagerank = node.data('PageRank')
+              if(pagerank != maxPageRank.value) {
+                node.css("width",35*(node.data('PageRank') / maxPageRank.value))
+                node.css("height",35*(node.data('PageRank') / maxPageRank.value))
+              }
 
-              node.css('width', 1000 * (node.data('pagerank') / 0.5))
-              node.css('height', 1000 * (node.data('pagerank') / 0.5))
 
-              //console.log(node.data('label'))
+              //console.log("cluster_id "+cid )
+              //node.addClass("node"+cid)
+              //console.log(node)
+              
+            }
           });
+
+
+
 
           cy.edges().forEach(function(edge) {
             //edge.css('width', edge(weight))
@@ -1405,9 +767,9 @@
   </head>
 
   <body>
-          <h1>cytoscape-fcose demo</h1>
+          <h1>Syntney Visualization</h1>
           <div id="cy"></div>    
-          <button onclick="javascript:createPDF();">PDF</button>  
+          <!--<button onclick="javascript:createPDF();">PDF</button> -->
 
   </body>
 
