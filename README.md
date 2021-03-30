@@ -4,7 +4,7 @@ evolutionary related candidate sequences will get a high synteny score, whilst
 sequences with no homologous gene neighborhood will get a low score.
 
 The workflow was originally developed to work with the output of a GLASSgo sRNA
-search as list of trustable hologous sequences. Further the synteny of unknown 
+search as list of trustable homologous sequences. Further the synteny of unknown 
 sequences e.g. from a BLAST search can be scored.  To score sequences, the header 
 in the input FASTA file needs to start with the NCBI accession number followed by 
 a : and the starting position of the hit in the genome. 
@@ -55,7 +55,9 @@ conda activate Syntney
 		File Path to SQLite script
 -o --outfiles
 		path and name where all outfiles are getting stored. Folder is NOT 
-		created if it is not present			
+		created if it is not present
+-x --num_threads 
+                Number of threads; default=1
 -c --cluster_script
 		path to the R synteny extraction script	
 -r --page_rank
@@ -93,7 +95,7 @@ conda activate Syntney
 ```
 	
 **Example:**
-Before Syntney.py can be applied to a specific dataset; a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
+Before Syntney.py can be applied to a specific dataset, a database should be selected. If you start from scratch, you can define the database name by yourself. Here we called it "my_database.db", but you can name it as ever you want. After executing Syntney.py, a database with its given name is built and grows corresponding to its input.
 
 ```
 python3 Syntney.py -d my_database.db -i ./testfiles/sRNA.fasta -t ./testfiles/candidates.fasta  -o synteny

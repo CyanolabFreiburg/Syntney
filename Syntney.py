@@ -19,8 +19,6 @@ def check_NCBI_format(fasta_header):
     m = p.match(fasta_header)
     n = q.match(fasta_header)
 
-    print(m)
-    print(n)
     if m != None:
         if m.span()[0] == 0:
             return fasta_header
@@ -367,7 +365,7 @@ def build_network(synteny_dict):
 # builds and returns a ete3 tree from the sRNA sequences from a "fasta" infile (should be the trustable GLASSgo file).
 # as the tree is built with numbers instead of the identifier ("accession id"_"starting nucleotide"), also a tree_iddict
 # is returned where the id points on the corresponding number.
-def tree_construction(rRNA_data):
+def tree_construction(rRNA_data, n_threads):
     count = 0
     tree_iddict = dict()
     forbidden = set()
@@ -402,7 +400,7 @@ def tree_construction(rRNA_data):
 
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
-        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")
+        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --threads=" + str(n_threads)  + " --full --force > /dev/null")
 
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
@@ -497,9 +495,9 @@ def add_outgoing_connection_weights(network):
 # output:
 # network   {cluster: [normalized sum of outgoing connections, {connected_cluster1: [normalized weight of this connection,
 #               [list of accessions with this connection], sum of branches weight], ...}[list of Accessions with "cluster"]}
-def normalize_connections(rRNA_data, network):
+def normalize_connections(rRNA_data, network, n_threads):
     ###tree_iddict, tree = tree_construction(wdir, network_file)
-    tree_iddict, tree = tree_construction(rRNA_data)
+    tree_iddict, tree = tree_construction(rRNA_data, n_threads)
     treelength = whole_tree_length(tree) # whole tree length
     values = []
     zeroweights = []  # stores connections with a weight of 0
@@ -1070,7 +1068,7 @@ def main():
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network)
+    network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network, args.num_threads)
 
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
