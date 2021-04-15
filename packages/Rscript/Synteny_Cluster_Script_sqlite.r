@@ -16,7 +16,6 @@ require(stringi)
 
 
 
-
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
 #filename<-"~/media/jens@margarita/Syntney/testfiles/zeroEva.fasta"
 filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa"

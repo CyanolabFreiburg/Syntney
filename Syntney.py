@@ -12,11 +12,10 @@ import tempfile
 import re
 
 
-
 def check_NCBI_format(fasta_header):
     tmp_header = ""
-    p = re.compile(r'.*:c?\d*-\d*')
-    q = re.compile(r'.*/\d*-\d*')
+    p = re.compile(r'.{0,20}:c?\d*-\d*')
+    q = re.compile(r'.{0,20}/\d*-\d*')
     m = p.match(fasta_header)
     n = q.match(fasta_header)
 
@@ -40,19 +39,44 @@ def check_NCBI_format(fasta_header):
         raise Exception()
 
 
-def check_fasta_consistency(fasta_file):
+def check_input_consistency(fasta_file, sqlite_handler):
     f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
     tmp_file = f.name
     count = 0
     try:
+        # FASTA Format
         with open(fasta_file, "rU") as handle:
             for record in SeqIO.parse(handle, "fasta"):
                 new_header = check_NCBI_format(record.description)
                 f.write(">" + str(new_header) + "\n")
                 f.write(str(record.seq) + "\n")
                 count += 1
-        f.close()
-        
+        # check if file format correspond to a 12 column blast output
+        if count == 0:
+            build_string = ""
+            with open(fasta_file, "rU") as handle:
+                for line in handle:
+                    line = line.rstrip()
+                    tmp_arr = line.split("\t")
+                    if len(tmp_arr) == 12:
+                        seq_id = tmp_arr[1]
+                        start_pos = int(tmp_arr[8])
+                        end_pos = int(tmp_arr[9])
+                        if start_pos <= end_pos:
+                            build_string += str(seq_id) + "@" + str(start_pos) + "@" + str(end_pos) + "@" + "+" + " "
+                        else:
+                            build_string += str(seq_id) + "@" + str(end_pos) + "@" + str(start_pos) + "@" + "-" + " "
+                        count += 1
+                    else:
+                        count = 0
+                        break
+            # get FASTA from DB
+            if count > 0:
+                fasta_string = subprocess.getoutput("python3 " + str(sqlite_handler) + " -pdna " + str(build_string))
+                f.write(fasta_string)
+            f.close()
+
+        # no supported file format can be detected
         if count == 0:
             raise Exception()
     except:
@@ -65,9 +89,11 @@ def check_fasta_consistency(fasta_file):
                 "><ID>:c<start coordinate>-<end coordinate> <some comments>" + "\n" +
                 "(b)" + "\n" +
                 "><ID>/<start coordinate>-<end coordinate> <some comments>" + "\n" +
-                "<Sequence>" + "\n")
+                "<Sequence>" + "\n" +
+                "(c)" + "\n" +
+                "12 column BLAST Table" + "\n"
+                )
         exit()
-
     return tmp_file
 
 
@@ -339,7 +365,7 @@ def build_network(synteny_dict):
 # builds and returns a ete3 tree from the sRNA sequences from a "fasta" infile (should be the trustable GLASSgo file).
 # as the tree is built with numbers instead of the identifier ("accession id"_"starting nucleotide"), also a tree_iddict
 # is returned where the id points on the corresponding number.
-def tree_construction(rRNA_data):
+def tree_construction(rRNA_data, n_threads):
     count = 0
     tree_iddict = dict()
     forbidden = set()
@@ -374,7 +400,8 @@ def tree_construction(rRNA_data):
 
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
-        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --full --force > /dev/null")       
+        os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --threads=" + str(n_threads)  + " --full --force > /dev/null")
+
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
         os.system("quicktree -in m " + str(tmp_clustalo.name) + " > " + str(tmp_quicktree.name))
@@ -468,9 +495,9 @@ def add_outgoing_connection_weights(network):
 # output:
 # network   {cluster: [normalized sum of outgoing connections, {connected_cluster1: [normalized weight of this connection,
 #               [list of accessions with this connection], sum of branches weight], ...}[list of Accessions with "cluster"]}
-def normalize_connections(rRNA_data, network):
+def normalize_connections(rRNA_data, network, n_threads):
     ###tree_iddict, tree = tree_construction(wdir, network_file)
-    tree_iddict, tree = tree_construction(rRNA_data)
+    tree_iddict, tree = tree_construction(rRNA_data, n_threads)
     treelength = whole_tree_length(tree) # whole tree length
     values = []
     zeroweights = []  # stores connections with a weight of 0
@@ -867,26 +894,33 @@ def visualize_network(connectiondict, outfile):
 # {cluster: [pagerank, {connected_cluster1: [normalized number of connections, [list of Accessions with this node]],
 #            connected_cluster2: [...]], ...}, [list of accessions with "cluster"], teleport prob. to cluster], ...}
 def visualize_cytoscape_network(network, outfile, mode):
+    data = "#network.txt\n"
     f = open(outfile, "w")
     if mode == "on":
+        data += "cluster,connected cluster,PageRank, connection weight\n"
         f.write("cluster,connected cluster,PageRank, connection weight\n")
     elif mode == "off":
+        data += "cluster,connected cluster,Sum of branches, connection weight\n"
         f.write("cluster,connected cluster,Sum of branches, connection weight\n")
     for cluster in network:
         pagerank = network[cluster][0]
         for connected_cluster in network[cluster][1]:
             weight = network[cluster][1][connected_cluster][0]
+            data += cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n"
             f.write(cluster + "," + connected_cluster + "," + str(pagerank) + "," + str(weight) + "\n")
-
     f.close()
+    return data
 
 
 # the annotation file comes from the R-Script and is only used, if the user apply the -n --network parameter
-def write_std_data(network_annotation, outfile):
+def write_std_data(network_annotation, data_id, outfile):
+    data = "#" + str(data_id) + "\n"
     f = open(outfile, "w")
     for entry in network_annotation:
+        data += str(entry) + "\n"
         f.write(str(entry) + "\n")
     f.close()
+    return data
 
 
 # produces an output file containing the sequence identifiers with their up and downstream cluster numbers.
@@ -896,20 +930,27 @@ def write_std_data(network_annotation, outfile):
 #                       {downstream_ proteins},
 #                       [upstream_Cluster],
 #                       [downstream_Cluster]]}
-def output_cluster_synteny_file(syteny_table, outfile):
+def output_cluster_synteny_file(syteny_table, data_id, outfile):
+    data = "#" + str(data_id) + "\n"
     f = open(outfile, "w")
     f.write("identifier\tupstream cluster\tdownstream cluster\n")
     for entry in syteny_table:
         upstream = syteny_table[entry][2]
         downstream = syteny_table[entry][3]
+        data += entry + "\t"
         f.write(entry + "\t")
         for cluster in upstream:
+            data += cluster + ","
             f.write(cluster + ",")
+        data += "\t"
         f.write("\t")
         for cluster in downstream:
+            data += cluster + ","
             f.write(cluster + ",")
+        data += "\n"
         f.write("\n")
     f.close()
+    return data
 
 
 # normalizes the synteny value of the sequences used for network contruction to the max value of these.
@@ -965,9 +1006,9 @@ def write_outfile_from_missing_ids_table(missing_ids_table, outfile):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--network_file", help="fasta file containing sequences used for network construction",
+    parser.add_argument("-i", "--network_file", help="fasta file containing sequences used for network construction or 12 column BLAST Table",
                         type=str)
-    parser.add_argument("-t", "--test_file", help="optional fasta file containing sequences that are checked for network match",
+    parser.add_argument("-t", "--test_file", help="optional fasta file containing sequences that are checked for network match or 12 column BLAST Table",
                         type=str, default=None)
     parser.add_argument("-c", "--cluster_script", help="path to synteny clustering R script",
                         type=str,
@@ -998,16 +1039,19 @@ def main():
     if os.path.isdir(path_psi_out):
         shutil.rmtree(path_psi_out)
 
-    # check the FASTA file(s) for consistency
-    proven_network_fasta = check_fasta_consistency(args.network_file)
+    # define variable to store crucial information for "R-Script"
+    aggregated_results = ""
+
+    # check the FASTA file(s) of consistency
+    proven_network_fasta = check_input_consistency(args.network_file, args.sqlite_script)
+
     if args.test_file != None:
-        proven_test_fasta = check_fasta_consistency(args.test_file)
+        proven_test_fasta = check_input_consistency(args.test_file, args.sqlite_script)
     else:
         proven_test_fasta = None
     
     try:
         r_script_cluster_table, r_script_synteny_table, r_network_annotation_table, r_missing_ids_table, r_rRNA_network_table, network_ids, test_ids = run_r_script(proven_network_fasta, proven_test_fasta, args.cluster_script, args.sqlite_db, args.sqlite_script, args.num_threads, synteny_window=str(args.synteny_window))
-        
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
 
@@ -1024,7 +1068,7 @@ def main():
     cluster_dict = get_clusters(r_script_cluster_table)
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
-    network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network)
+    network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network, args.num_threads)
 
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
@@ -1038,7 +1082,6 @@ def main():
             network[entry][0] = network[entry][-1]
     else:
         raise Exception("flags --node_normalization False and --page_rank off produces nonsense result")
-
 
 
     network_synteny_table = calculate_synteny_value(network_synteny_table, best_paths, network)
@@ -1058,14 +1101,27 @@ def main():
         visualize_network(network, outfile=args.outfiles + "_Network.svg")
         output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Cluster.txt")
     elif args.network == "cys":
-        visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt", mode=args.page_rank)
-        write_std_data(r_network_annotation_table, outfile=args.outfiles + "_Network_Annotation.txt")
-        write_std_data(r_script_synteny_table, outfile=args.outfiles + "_Synteny_Table.txt")
+        # essential
+        aggregated_results += visualize_cytoscape_network(network, outfile=args.outfiles + "_Network.txt", mode=args.page_rank)
+        # _Network_Annotation.txt - only used for internal testing
+        aggregated_results += write_std_data(r_network_annotation_table, "network_annotation", outfile=args.outfiles + "_Network_Annotation.txt")
+        # _Synteny_Table.txt - only used for internal testing
+        aggregated_results += write_std_data(r_script_synteny_table, "synteny_table", outfile=args.outfiles + "_Synteny_Table.txt")
         if test_synteny_table is not None:
             output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Evaluated_Cluster.txt")
-        output_cluster_synteny_file(network_synteny_table, outfile=args.outfiles + "_Network_Cluster.txt")
+        # _Network_Cluster.txt - only used for internal testing
+        aggregated_results += output_cluster_synteny_file(network_synteny_table, "network_cluster", outfile=args.outfiles + "_Network_Cluster.txt")
     else:
         pass
+
+
+    ###### START TEST OUTPUT JENS
+    #print(aggregated_results)
+    handle = open("./aggregated_results.jens", "w")
+    for line in aggregated_results:
+        handle.write(line)
+    handle.close()
+    ###### END TEST OUTPUT JENS
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
