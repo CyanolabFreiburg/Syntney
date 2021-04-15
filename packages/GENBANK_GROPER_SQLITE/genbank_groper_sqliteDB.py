@@ -365,7 +365,9 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                                             start, end, ori = extract_coordinates(coords)
                                             # print(start, end, ori)
                                             mito_frag = gb_record.seq[start:end]
+                                            # RNA sequence starts with * to differentiate from protein
                                             ext_seq = '*' + mito_frag
+                                            # DNA to RNA conversion
                                             rna = str(ext_seq).replace("T", "U")
                                             seq = zlib.compress(rna.
                                             encode('utf-8'))
