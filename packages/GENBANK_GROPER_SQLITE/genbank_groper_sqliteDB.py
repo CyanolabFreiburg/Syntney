@@ -351,6 +351,58 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                         user_acc_flag = True
                         # get data from genbank and rearrange the structure
                         for entry in gb_record.features:
+                            if entry.type == "tRNA" or entry.type == "ncRNA" or entry.type == "rRNA":
+                                location = entry.location
+                                # check if location is unfinished -> [<0:687](-)
+                                # or 7251..>7537
+                                if len(re.findall("(<|>)", str(location))) == 0:
+                                    # multiple hits for the same sequence
+                                    if str(location).startswith("join"):
+                                        locs = re.findall("{(.*?)}", str(location))[0]
+                                        locs_arr = locs.split(",")
+                                        # number of coordinates
+                                        for coords in locs_arr:
+                                            start, end, ori = extract_coordinates(coords)
+                                            # print(start, end, ori)
+                                            mito_frag = gb_record.seq[start:end]
+                                            ext_seq = '*' + mito_frag
+                                            rna = str(ext_seq).replace("T", "U")
+                                            seq = zlib.compress(rna.
+                                            encode('utf-8'))
+                                            # print(zlib.decompress(seq).decode('utf-8') )
+                                            if "locus_tag" in entry.qualifiers:
+                                                gene_loc = entry.qualifiers["locus_tag"][0]
+                                            else:
+                                                gene_loc = "na"
+                                            if "gene" in entry.qualifiers:
+                                                gene = entry.qualifiers["gene"][0]
+                                            else:
+                                                gene = "na"
+
+                                            rows_proteins.append([gb_record.id, gene_loc,
+                                                                gene, start, end,
+                                                                ori, seq])
+                                    else:
+                                        start, end, ori = extract_coordinates(location)
+                                        # print(start, end, ori)
+                                        mito_frag = gb_record.seq[start:end]
+                                        ext_seq = '*' + mito_frag
+                                        rna = str(ext_seq).replace("T", "U")
+                                        seq = zlib.compress(rna.
+                                            encode('utf-8'))
+                                        # print(zlib.decompress(seq).decode('utf-8') )
+
+                                        if "locus_tag" in entry.qualifiers:
+                                            gene_loc = entry.qualifiers["locus_tag"][0]
+                                        else:
+                                            gene_loc = "na"
+                                        if "gene" in entry.qualifiers:
+                                            gene = entry.qualifiers["gene"][0]
+                                        else:
+                                            gene = "na"
+
+                                        rows_proteins.append([gb_record.id, gene_loc, gene,
+                                                            start, end, ori, seq])
                             if entry.type == "CDS" and ("translation" in entry.qualifiers):
                                 location = entry.location
                                 # check if location is unfinished -> [<0:687](-)
@@ -1017,7 +1069,7 @@ if __name__ == "__main__":
 
     # ncbi_file_path = ''
     ncbi_file_path = str(ncbi_folder_name) + "/" + str(ncbi_master_table)
-
+    
     # check if there are new data available to store in the database
     org_name = args.genbank
     if os.path.exists(org_name):
