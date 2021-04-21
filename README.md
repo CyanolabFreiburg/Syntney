@@ -16,7 +16,7 @@ of sequence headers in the output FASTA files
 **Get Started**
 
 If you are using Conda / Miniconda (https://docs.conda.io/en/latest/miniconda.html), 
-you can easylie setup your environment using the Syntney_Conda.yml file.
+you can easily setup your environment using the Syntney_Conda.yml file.
 
 Command-line Call:
 ```

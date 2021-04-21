@@ -19,11 +19,12 @@ require(stringi)
 filename<-file('stdin', 'r') # result fasta file from GLASSgo
 #filename<-"~/media/jens@margarita/Syntney/testfiles/zeroEva.fasta"
 filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa"
-
+filename<-"/home/jens/media/jens@margarita/Staph_enrichment/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/GLASSgo_output_HG001_02848.fa"
+#filename<-"/home/jens/media/jens@margarita/Staph_enrichment/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/GLASSgo_output_HG001_02881.fa"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
-db_path<-"~/Syntney_db/synt.db"
+db_path<-"~/synteny/synt_rRNA.db"
 threads<-30
 name<-"sRNA"
 write_files<-F
@@ -155,22 +156,55 @@ rand_extension<-function(x, Accession){
 	temp
 }
 
+# get_prot_fasta3<-function(out, filen){
+  # fasta<-c()
+  # for(i in 1:length(out)){
+    # for(j in 1:nrow(out[[i]])){
+        # if(is.na(out[[i]][j,6])==F){
+        # temp<-as.character(out[[i]][j,6])
+		# na<-as.character(out[[i]][j,5])
+		# na<-gsub("\\\"","",na)
+         # na<-paste(">",na,sep="")
+		 # temp<-c(na,temp)
+         # fasta<-c(fasta,temp)
+        # }
+      # }
+    # }
+  # write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+# }
+
 get_prot_fasta3<-function(out, filen){
   fasta<-c()
+  fasta_rna<-c()
   for(i in 1:length(out)){
     for(j in 1:nrow(out[[i]])){
         if(is.na(out[[i]][j,6])==F){
-        temp<-as.character(out[[i]][j,6])
-		na<-as.character(out[[i]][j,5])
-		na<-gsub("\\\"","",na)
-         na<-paste(">",na,sep="")
-		 temp<-c(na,temp)
-         fasta<-c(fasta,temp)
-        }
-      }
+			temp<-as.character(out[[i]][j,6])
+			rna_gene<-grep("\\*",temp)
+			na<-as.character(out[[i]][j,5])
+			na<-gsub("\\\"","",na)
+			na<-paste(">",na,sep="")
+			temp<-c(na,temp)
+			if(length(rna_gene)>0){
+				temp<-gsub("\\*","",temp)
+				fasta_rna<-c(fasta_rna,temp)
+			} else{
+				fasta<-c(fasta,temp)
+			}
+		}
     }
-  write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+	}
+	write.table(fasta, file=filen, sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+	write.table(fasta_rna, file=paste0(filen,"_rna"), sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+	out<-"no_rna_genes"
+	if(length(fasta_rna)>0){
+		out<-"existance_of_rna_genes"
+	}
+	out
 }
+
+
+
 
 
 # identify homologous proteins using CDhit
@@ -194,6 +228,23 @@ cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, 
 	 cd
 }
 
+
+cdhit_run_rna<-function(fasta="protein_fasta.txt", outname="psi", thres=0.75,  threads=2){
+	tempf<-tempfile()
+	wd<-getwd()
+	di<-paste(wd,"/", "psi_out",sep="")
+	dir.create(di)
+	inp<-paste("cd-hit-est -i ", fasta,  " -d 50 -o ",tempf, " -c ",  thres ," -n 4", " -aL 0.6", " -T ", threads, sep="")
+	 system(inp, intern=T)
+	 cd<-paste(tempf, ".clstr", sep="")
+	 cd<-readLines(cd)
+	 cd<-as.character(cd)
+	 cd<-gsub("\t"," ", cd)
+	 cd
+}
+
+
+
 proc_cdhit<-function(x){ 
   clustlist<-list()
   numb<-grep(">Cluster", x)
@@ -205,6 +256,7 @@ proc_cdhit<-function(x){
       end<-length(x)
     }
     temp<-x[(numb[i]+1):end]
+	temp<-gsub(".*nt, >","",temp)
     temp<-gsub(".*aa, >","",temp)
     temp<-gsub("\\.\\.\\..*","",temp)
     clustlist[[i]]<-temp
@@ -442,6 +494,8 @@ ids<-ids[match(id2,ids)]
 out<-vector("list", length(ids))
 names(out)<-ids
 
+
+
 for(i in 1:length(ids)){
 	tmp<-which(dat[,1]==ids[i])
 	srna<-match(ids[i],id2)
@@ -470,9 +524,18 @@ for(i in 1:length(ids)){
 }
 filen<-tempfile()
 tagtable<-locus_tag2org(out)
-get_prot_fasta3(out, filen)
+
+
+rna_ex<-get_prot_fasta3(out, filen)
 cd<-cdhit_run(fasta=filen, psi=F,thres=0.4, threads=threads)
 cd<-proc_cdhit(cd)
+if(rna_ex=="existance_of_rna_genes"){
+	in_file<-paste0(filen,"_rna")
+	cd2<-cdhit_run_rna(fasta=in_file, thres=0.8, threads=threads)
+	cd2<-proc_cdhit(cd2)
+	cd<-c(cd,cd2)
+}
+
 
 synt_table<-function(out3, coor){
 	position<-c()
