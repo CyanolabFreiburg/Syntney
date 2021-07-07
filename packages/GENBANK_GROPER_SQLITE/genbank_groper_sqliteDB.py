@@ -16,7 +16,7 @@ from datetime import datetime
 import sqlite3 as lite
 import numpy as np
 import tempfile
-import io
+import subprocess
 import warnings
 from collections import defaultdict
 import signal
@@ -28,7 +28,7 @@ Output:
 * default mySQLiteDB.db in working directory.
 * DB contains the following 3 tables:-
 1. DNA sequence
-2. Proteins/Genes 
+2. Proteins/Genes
 3. 16srRNA
 * Provides RefSeq IDs
 * Partial DNA sequence
@@ -36,15 +36,19 @@ Output:
 Example1 (updates DB with DNA, Proteins and 16sRNA table):
 - python genbank_groper_sqliteDB.py -g NC_000913.faa -s sqlilte.db
 Example2 (provides RefSeq IDs - accepts multiple input organisms):
-- python genbank_groper_sqliteDB.py -rs CP025541.3 CP025541.2 CP009125.1 CP025541.1
-Example3 (provides proteins/genes - accepts single input organisms with -r and -c parameters):
-- python genbank_groper_sqliteDB.py -a CP025545.1 -s sqlilte.db
-Example4 (provides proteins/genes - accepts a tab separted file with -r and -c parameters):
+- python genbank_groper_sqliteDB.py -rs CP025541.3 CP025541.2 CP009125.1
+Example3 (provides proteins/genes - accepts single input organisms with
+            -r and -c parameters):
+- python genbank_groper_sqliteDB.py -a CP025545.1 -r 1000 -c 500 -s sqlilte.db
+Example4 (provides proteins/genes - accepts a tab separted file ):
 - python genbank_groper_sqliteDB.py -a acc_file.txt -s sqlilte.db
 Example5 (provides 16sRNA sequences - accepts multiple input organisms):
-- python genbank_groper_sqliteDB.py -rRNA CP025541.3 CP025541.2 CP009125.1 -s sqlilte.db
-Example6 (provides partial DNA sequence(s) - accepts a space separted input string with @ separated sequence start, end and strands):
-- python genbank_groper_sqliteDB.py -pdna CP011246.1@30@50@- CP011247.1@10@20@+ -s sqlilte.db
+- python genbank_groper_sqliteDB.py -rRNA CP025541.3 CP025541.2 CP009125.1
+            -s sqlilte.db
+Example6 (provides partial DNA sequence(s) - accepts a space separted input
+            string with @ separated sequence start, end and strands):
+- python genbank_groper_sqliteDB.py -pdna CP011246.1@30@50@- CP011247.1@10@20@+
+            -s sqlilte.db
 
 Note: Please install the required dependencies
 """
@@ -106,7 +110,6 @@ def seq_check_db(con, organism, dna_file):
         cursor.execute("SELECT acc From genome_dna WHERE acc=? AND [16sRNA] \
                     IS NULL",
                        (organism,))
-        
         organism_in_table = cursor.fetchall()
         con.commit()
 
@@ -134,12 +137,26 @@ def execute_barrbap(organism, dna_file):
     # barrnap output file name e.g. barrnap.NC_000913
     barrnap_out = cwd + "/barrnap." + organism
     # > /dev/null 2>&1 is to disable stdout from displaying on terminal
-    barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " + barrnap_out + " > /dev/null 2>&1"
-    os.system(barrnap_cmd)
-    if not os.path.isfile(barrnap_out):
-        file_cmd = "touch " + barrnap_out
-        os.system(file_cmd)
-    return barrnap_out
+    barrnap_cmd = "barrnap " + str(dna_file) + " --quiet --outseq " +\
+                    barrnap_out + " > /dev/null 2>&1"
+    try:
+        # print('Barrnap is RUNNING !!!!!')
+        os.system(barrnap_cmd)
+        if not os.path.isfile(barrnap_out):
+            file_cmd = "touch " + barrnap_out
+            try:
+                subprocess.run([file_cmd], check = True)
+            except:
+                print('Ctrl C pressed, program safely exited !!!!!!!!?')
+                os.system('rm ' + str(organism) + '*')
+                os.system('rm -r *_TMP')
+                os._exit(0)
+        return barrnap_out
+    except:
+        print('Ctrl C pressed, program safely exited !!!!!!!!! ###')
+        if con:
+            con.close()
+        os._exit(0)
 
 
 def hamming_distance(seq1, seq2):
@@ -149,7 +166,7 @@ def hamming_distance(seq1, seq2):
     if seq2 == seq1:
         dist_counter = 0
     else:
-        if len(seq1) ==  len(seq2):
+        if len(seq1) == len(seq2):
             seq_len = len(seq1)
             for n in range(seq_len):
                 if seq1[n] != seq2[n]:
@@ -175,7 +192,7 @@ def matrix_fill(dim, arr, sequences):
                 for j in range(dim):
                     if i + j < dim:
                         hamm_dist = hamming_distance(sequences[i],
-                                                    sequences[i + j])
+                                                        sequences[i + j])
                         arr[i, i + j] = hamm_dist
                         arr[i + j, i] = hamm_dist
         return arr
@@ -192,6 +209,8 @@ def sumColumn(dim, matrix_nd, column):
 
 def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
     """Insert record into SqliteDB"""
+
+    # print("insert_db function !!!!")
     refseq_id = ""
     if "NC_" in organism or "NZ_" in organism:
         refseq_id = organism
@@ -202,14 +221,17 @@ def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
     cursor.execute("SELECT genome_dna.[16sRNA_Ref], [16sRNA].acc FROM genome_dna, [16sRNA] WHERE genome_dna.[16sRNA_Ref] like ?1 AND [16sRNA].acc like ?1", (org_id + "._%",))
     data = cursor.fetchall()
     con.commit()
+
     if len(data) == 0:
         cursor.execute("""INSERT into [16sRNA](acc, [16sRNA_Seq])
                     VALUES(?,?)""", (organism, consensus_seq))
-        con.commit()                
+        con.commit()
 
     cursor.execute("""INSERT into genome_dna(acc, refseq, dna, [16sRNA_Ref])
                 VALUES(?,?,?,?)""", (organism, refseq_id, dna_seq, chr_ref))
     con.commit()
+    # print("Exiting insert_db !!!!")
+
 
 def consensus_sequence(dim, sequences, sequences_dict, keys):
     # an emtpy matrix created
@@ -221,14 +243,13 @@ def consensus_sequence(dim, sequences, sequences_dict, keys):
     warnings.simplefilter(action='ignore', category=FutureWarning)
     array_data = np.all((arr == 0), axis=1)
     if np.all(array_data):
-        consensus_seq =  sequences[0]
+        consensus_seq = sequences[0]
     else:
         for column in range(dim):
             sum_of_columns.append(sumColumn(dim, arr, column))
         # consensus sequence index and sequence
         consensus_seq_indx = sum_of_columns.index(min(sum_of_columns))
         consensus_seq = sequences_dict[keys[consensus_seq_indx]]
-    
     return consensus_seq
 
 
@@ -309,12 +330,14 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
     1 - check if genbank is a file or folder and download file if the data
     is not in the db
     """
+    # print("Insert_genbank function !!!!")
+
     state = ""
     dna_seq = ""
     consensus_seq = ""
     file_arr = []
     if os.path.isfile(genbank):
-            file_arr = glob.glob(genbank)
+        file_arr = glob.glob(genbank)
     if os.path.isdir(genbank):
         genbank = str(genbank) + "*"
         file_arr = glob.glob(genbank)
@@ -460,43 +483,49 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                                 # as required by temporary File
                                 temp_dna.write((">" + gb_record.id + "\n" +
                                                 str(gb_record.seq)).encode())
-                                # executes barrnap and returns the output file
-                                barrnap_out = execute_barrbap(gb_record.id, temp_dna.name)
-                                # makes dictionary of 16sRNA seq from barrnap output file
-                                if os.stat(barrnap_out).st_size != 0:
-                                    sequences_dict = barrbap_dict_creation(barrnap_out)
-                                    # provides keys only in the dictionary
-                                    keys = list(sequences_dict.keys())
-                                    # extracts sequences from the dictionary
-                                    sequences = list(sequences_dict.values())
-                                    # earlier below was keys != 0:
-                                    if keys != []:
-                                        chr_ref = gb_record.id
-                                    # array dimensions [dim x dim]
-                                    dim = len(keys)
-                                    # checks if the detected 16sRNA sequences are two or less
-                                    if dim > 2:
-                                        """ If 16sRNA sequences are more than two then search for
-                                        more similar to each other"""
-                                        # print("detected 16sRNA are more than 2")
-                                        # determines consensus sequences
-                                        consensus_seq = consensus_sequence(dim, sequences,
-                                                                        sequences_dict,
-                                                                        keys)
-                                    elif dim == 2 or dim == 1:
-                                        # print("\ndetected 16sRNA are 2 or less !!!!\n")
-                                        consensus_seq = sequences[0]
+                                try:
+                                    # executes barrnap and returns the output file
+                                    barrnap_out = execute_barrbap(gb_record.id, temp_dna.name)
+                                    # makes dictionary of 16sRNA seq from barrnap output file
+                                    if os.stat(barrnap_out).st_size != 0:
+                                        sequences_dict = barrbap_dict_creation(barrnap_out)
+                                        # provides keys only in the dictionary
+                                        keys = list(sequences_dict.keys())
+                                        # extracts sequences from the dictionary
+                                        sequences = list(sequences_dict.values())
+                                        # earlier below was keys != 0:
+                                        if keys != []:
+                                            chr_ref = gb_record.id
+                                        # array dimensions [dim x dim]
+                                        dim = len(keys)
+                                        # checks if the detected 16sRNA sequences are two or less
+                                        if dim > 2:
+                                            """ If 16sRNA sequences are more than two then search for
+                                            more similar to each other"""
+                                            # print("detected 16sRNA are more than 2")
+                                            # determines consensus sequences
+                                            consensus_seq = consensus_sequence(dim, sequences,
+                                                                            sequences_dict,
+                                                                            keys)
+                                        elif dim == 2 or dim == 1:
+                                            # print("\ndetected 16sRNA are 2 or less !!!!\n")
+                                            consensus_seq = sequences[0]
 
-                                else:
-                                    consensus_seq = "No 16sRNA sequence found"
-                                    # print("No 16sRNA sequence found")
-                                # dna_seq is being encoded to save space i.e. BLOB entry in DB
-                                dna_seq = zlib.compress(str(gb_record.seq).encode('utf-8'))
-
-                                insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
-                                # print("SqliteDB is successfuly updated !!!!\n")
-                                # remove the redundant/temp file
-                                # remove_file()
+                                    else:
+                                        consensus_seq = "No 16sRNA sequence found"
+                                        # print("No 16sRNA sequence found")
+                                    # dna_seq is being encoded to save space i.e. BLOB entry in DB
+                                    dna_seq = zlib.compress(str(gb_record.seq).encode('utf-8'))
+                                    insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
+                                    # print("SqliteDB is successfuly updated !!!!\n")
+                                    # remove the redundant/temp file
+                                    # remove_file()
+                                except:
+                                    print('Ctrl C pressed, program safely exited !!!!!!')
+                                    os.system('rm ' + str(gb_record.id) + '*')
+                                    if con:
+                                        con.close()
+                                    os._exit(0)
 
                             else:
                                 dna_seq = "NA"
@@ -517,18 +546,30 @@ def insert_genbank(genbank, con, user_acc, chr_ref, chr_flag):
                         except:
                             print("len(str(gb_record.seq)) in exception:" , len(str(gb_record.seq)))
                             print("something went wrong with extraction of data")
+                            # ctrl c pressed
+                            if con:
+                                con.close()
+                            os._exit(0)
         
         except:
             print("ERROR in extraction and insertion of data")
-            os.system("rm -f *.fai barrnap.*")
+            os.system("rm -rf *.fai barrnap.* *_TMP")
+            # ctrl c pressed
+            if con:
+                con.close()
+            os._exit(0)
+
     
     # remove the output files created by barrnap
     os.system("rm -f *.fai barrnap.*")
     user_acc = chr_ref
+    # print("Exiting insert_genbank !!!")
     return user_acc
 
 
 def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag):
+    # print("get_data_from_ncbi function !!!!")
+
     ts = calendar.timegm(time.gmtime())
     tmp_download_path = os.getcwd() + "/" + str(ts) + "_TMP"
     os.makedirs(tmp_download_path)
@@ -575,11 +616,12 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc, con, flag, chr_flag):
         sys.stderr.write("***FTP/HTTP ERROR: " + user_acc +
                         " CANNOT BE DOWNLOADED! ***")
         shutil.rmtree(tmp_download_path)
-
+    # print("exiting get_data_from_ncbi !!!!")
 
 def get_data(con, user_id, user_acc, user_center,
              user_range, organism_col, ftp_lnk, organism_arr, chr_ref):
     results = ""
+    # print('get_data function !!!!')
     with con:
         cur = con.cursor()
         left_corner = int(user_center) - int(user_range)
@@ -664,7 +706,12 @@ def get_data(con, user_id, user_acc, user_center,
         except:
             # entry not available
             # todo check if exception can happen and document what's the reason for
-            print("Exception in get_data () :", user_id)
+            print("Ctrl C pressed, program safely exited !!!!")
+            # below is to close the program immediately.
+            if con:
+                con.close()
+            os._exit(0)
+    # print("exiting get_data function !!!!")
     return results
 
 
@@ -820,6 +867,7 @@ def chrom_plas(input_param):
 
 def update_db(con, id_container, acc_rrna):
     """update the record in database"""
+    # print("update_db function !!!!")    
     final_results = ""
     try:
         with con:
@@ -892,12 +940,13 @@ def update_db(con, id_container, acc_rrna):
         os._exit(0)
     except:
         print("ERROR IN update data function !!!!!!!!!!!!\n")    
+    # print("exiting update_db !!!!")
     return final_results
 
 def find_srRNA_gene(args_accession, args_srRNA, id_container):
     """Return 16sRNA sequences if -rRNA paramter used 
     and with -a parameter returns genes"""
-    
+    # print("find_sRNA_gene fuction !!!!")
     db_path = args.sqlite
     final_results = ''
     if args_srRNA:
@@ -911,7 +960,9 @@ def find_srRNA_gene(args_accession, args_srRNA, id_container):
                     cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc=?", (input_param,))
                     chr_ref = cur.fetchall()
                     con.commit()
+                    # print('checks if data exist in 16sRNA table')
                     if chr_ref == []:
+                        # print('when data is not found !!! ')
                         input_param = line.strip().split(".")[0]
                         cur.execute("SELECT [16sRNA_Ref] FROM genome_dna WHERE acc LIKE ?", (input_param + "._%",))
                         chr_ref = cur.fetchall()
@@ -959,7 +1010,7 @@ def find_srRNA_gene(args_accession, args_srRNA, id_container):
                 print(final_results)
 
         con.close()
-
+    # print("exiting find_sRNA_gene !!!")
 
 def input_check(input_param):
     """input check to ensure Id has correct length"""
@@ -1059,8 +1110,8 @@ if __name__ == "__main__":
                         organism(s) separated by space and returns 16srRNA(s)!",\
                         type=str, nargs="*")
     parser.add_argument("-pdna", "--extDNA", help="Parameter takes a\
-                        file with ID, start_seq, end_seq, strand in \
-                        tab separated format (like bed format) and returns a part of DNA!",\
+                        space separted (if multiple organims)  input string with ID, start_seq, end_seq and strand (+/-); \
+                        separated by @ (e.g. CP011246.1@30@50@+ CP011248.1@10@30@-) and returns a part of DNA accordingly!",\
                         type=str, nargs="*")
 
     args = parser.parse_args()
