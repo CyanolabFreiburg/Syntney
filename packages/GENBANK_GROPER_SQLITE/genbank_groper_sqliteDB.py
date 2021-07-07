@@ -1133,7 +1133,7 @@ if __name__ == "__main__":
         con.close()
     # check if ncbi lookup-file needs to be updated or not!
     update_mode = args.update.split("-")
-    
+
     if update_mode[0] == "on" and os.path.exists(ncbi_folder_name):
         # get date of current version
         if os.path.isdir(ncbi_file_path):
@@ -1174,7 +1174,7 @@ if __name__ == "__main__":
         file_path = wget.download(genbank_summary_url, out=ncbi_folder_name)
         process_NCBI_lookup(file_path, ncbi_folder_name, ncbi_master_table)
         print()
-    
+
     # input_param to avoid execution of -g *.gbk again to get_download()
     input_param = ""
     if args.genbank:
@@ -1185,7 +1185,7 @@ if __name__ == "__main__":
         input_param = (args.accession).strip()
         input_check(input_param)
 
-    # check input is a string or file 
+    # check input is a string or file
     id_container = list()
     if os.path.isfile(args.accession):
         handle = open(args.accession)
@@ -1205,14 +1205,13 @@ if __name__ == "__main__":
     if args.refseq:
         for line in args.refseq:
             refseq = find_refseq(ncbi_file_path, line.strip())
-            print("refseq ID of " , line , " is " , refseq , "!!!!!!!!!!\n")
+            print("refseq ID of ", line, " is ", refseq, "!!!!!!!!!!\n")
         sys.exit()
-        
+
     if args.accession or args.srRNA:
-        # determines the genes or rRNA sequences 
-        find_srRNA_gene(args.accession, args.srRNA, id_container )
+        # determines the genes or rRNA sequences
+        find_srRNA_gene(args.accession, args.srRNA, id_container)
 
     if args.extDNA:
         # extraction of part of a dna sequence within a given range
         dna_extraction(args.extDNA, args.sqlite, ncbi_file_path)
-        
