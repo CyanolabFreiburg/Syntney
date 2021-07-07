@@ -704,21 +704,17 @@
               if(pagerank != maxPageRank.value) {
                 node.css("width",35*(node.data('PageRank') / maxPageRank.value))
                 node.css("height",35*(node.data('PageRank') / maxPageRank.value))
-              }
-
-
-              //console.log("cluster_id "+cid )
-              //node.addClass("node"+cid)
-              //console.log(node)
-              
+              }           
             }
           });
 
-
-
+          var maxCombinedWeight = cy.edges().max(function(ele) {
+            return ele.data('combined_weight')
+          });
+          console.log(maxCombinedWeight.value)
 
           cy.edges().forEach(function(edge) {
-            //edge.css('width', edge(weight))
+            edge.css('width', 20*(edge.data("Sum_of_branches") / maxCombinedWeight.value))
           });
 
 
