@@ -12,19 +12,21 @@ require(stringi)
 #, mi. 
 #R --slave -f  ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r --args write_files=FALSE threads=10 filename=~/media/jens@margarita/Syntney/testfiles/Spot42.fa  synteny_window=5000 script_path=~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py db_path=~/Syntney_db/synt.db
 
-#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa  -o ~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/ -n cys -r off -d ~/Syntney_db/synt.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Syntney_test/RF01460_network.fasta  -o ~/media/jens@margarita/Syntney_test/ -n cys -r off -d ~/Syntney_db/synt_rRNA.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+#	python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Syntney_test/RF01460_network.fasta -t ~/media/jens@margarita/Syntney_test/RF01460_network.glassgo -o ~/Syntney_test/ -n cys -d ~/synteny/synt_rRNA.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r -x 30  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
+# python3 ~/media/jens@margarita/Syntney/Syntney.py -i ~/media/jens@margarita/Syntney_test/RF01460_network.fasta  -o ~/Syntney_test/ -n cys -d ~/synteny/synt_rRNA.db -c ~/media/jens@margarita/Syntney/packages/Rscript/Synteny_Cluster_Script_sqlite.r  -s ~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py
 
 
-
-filename<-file('stdin', 'r') # result fasta file from GLASSgo
+print("hallo")
+#filename<-file('stdin', 'r') # result fasta file from GLASSgo
 #filename<-"~/media/jens@margarita/Syntney/testfiles/zeroEva.fasta"
 filename<-"~/media/jens@margarita/Copra2_paper/Glassgo/RyhB/RyhB_ref2.fa"
-filename<-"/home/jens/media/jens@margarita/Staph_enrichment/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/GLASSgo_output_HG001_02848.fa"
+filename<-"~/media/jens@margarita/Syntney_test/RF01460_network.fasta"
 #filename<-"/home/jens/media/jens@margarita/Staph_enrichment/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/01_GLASSgo_Results/GLASSgo_output_HG001_02881.fa"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB_ver01.py"
 script_path<-"~/media/jens@margarita/Syntney/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py"
 #db_path<-"/media/cyano_share/exchange/Jens/Syntney/mySQLiteDB_new.db"
-db_path<-"~/synteny/synt_rRNA.db"
+db_path<-"~/syteny/synt_rRNA.db"
 threads<-30
 name<-"sRNA"
 write_files<-F
@@ -321,8 +323,11 @@ remove_overlapping_homologs<-function(coor, over_thres=0.5){
 
 
 fasta<-readLines(filename)
+
+
 net<-grep("#Network",fasta)
 test<-grep("#Test", fasta)
+
 if(length(net)==0){
 	net<-1:length(fasta)
 	test<-c()
@@ -337,7 +342,10 @@ if(length(net)==1 & length(test)==1){
 }
 
 
-closeAllConnections()
+#print(net)
+
+
+#closeAllConnections()
 coor<-export_ncRNA_coordinates(fasta[c(net,test)])
 coor<-remove_overlapping_homologs(coor)
 net<-export_ncRNA_coordinates(fasta[net])
@@ -354,7 +362,7 @@ if(length(dif)>0){
 
 #16S RNA
 orgs<-unique(net[,1])
-command<-paste("python3 ", script_path, " -s ", db_path, " -rRNA ", paste(orgs, collapse=" "))
+command<-paste("python3 ", script_path, " -s ", db_path," -rRNA ", paste(orgs, collapse=" "))
 print(command)
 rRNA<-system(command, intern=T)
 
@@ -376,19 +384,20 @@ orgs2<-gsub(">","",rRNA[orgs])
 
 rRNA2<-c()
 count<-0
-for(i in 1:length(orgs)){
-	tmp<-grep(orgs2[i], net[,1])
-	if(length(tmp)>0){
-		count<-count+length(tmp)
-		rRNA3<-matrix(,length(tmp),2)
-		for(j in 1:length(tmp)){
-			rRNA3[j,1]<-net[tmp[j],"Full_header"]
-			rRNA3[j,2]<-rRNA[orgs[i]+1]
+if(length(rRNA)>0){
+	for(i in 1:length(orgs)){
+		tmp<-grep(orgs2[i], net[,1])
+		if(length(tmp)>0){
+			count<-count+length(tmp)
+			rRNA3<-matrix(,length(tmp),2)
+			for(j in 1:length(tmp)){
+				rRNA3[j,1]<-net[tmp[j],"Full_header"]
+				rRNA3[j,2]<-rRNA[orgs[i]+1]
+			}
+			rRNA2<-rbind(rRNA2,rRNA3)
 		}
-		rRNA2<-rbind(rRNA2,rRNA3)
 	}
 }
-
 removed2<-c()
 if(count/nrow(net)>=rRNA_existence_threshold & count >=3){
 	orgs<-grep(">", rRNA)
