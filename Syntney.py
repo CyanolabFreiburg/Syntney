@@ -1008,7 +1008,7 @@ def main():
                         type=str, default=None)
     parser.add_argument("-c", "--cluster_script", help="path to synteny clustering R script",
                         type=str,
-                        default="./packages/Rscript/Synteny_Cluster_Script_sqlite.r")
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/packages/Rscript/Synteny_Cluster_Script_sqlite.r")
     parser.add_argument("-p", "--w_dir", help="working directory where temporary files are stored default is the "
                                               "current directory", type=str, default="")
     parser.add_argument("-n", "--network", help="if set to svg, 'outfile'_Network.svg is produced as an output."
@@ -1024,8 +1024,10 @@ def main():
                              "Default is False",type=bool, default=False)
     parser.add_argument("--use_sob_weights", help="If True uses sum of branch weights for Synteny Value calculation. "
                                                   "Default is False", type=bool, default=False)
-    parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str, default="../Syntney_DB/mySQLiteDB_new.db")
-    parser.add_argument("-s", "--sqlite_script", help="", type=str, default="./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
+    parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str,
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/mySQLiteDB_Syntney.db")
+    parser.add_argument("-s", "--sqlite_script", help="", type=str,
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
     parser.add_argument("-r", "--page_rank", help="Turn PageRank algorithm on or off; default=on", type=str, default="on")
     parser.add_argument("-x", "--num_threads", help="Number of threads; default=1", type=int, default=1)
     args = parser.parse_args()
