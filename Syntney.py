@@ -113,12 +113,12 @@ def check_input_consistency(fasta_file, sqlite_handler):
 # r_script_path:            path to the synteny clustering R script
 # synteny_window:           up and downstream number of bp of sequence that is searched for protein coding sequences
 def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script_path, num_threads, synteny_window=str(5000)):
-    seqdict = dict()
     network_ids = dict()
     fasta_header_network = dict()
-    seqdict.update({"#Network": ["", ""]})
+    seqString = "#Network" + "\n"
     for seq_record in SeqIO.parse(network_file, "fasta"):
-        seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
+        seqString += ">" + str(seq_record.description) + "\n"
+        seqString += str(seq_record.seq) + "\n"
         seq_id = seq_record.description
         # fasta_header_network used for filtering the output from the R-Script
         tmp_fasta_header = ">" + str(seq_id)
@@ -138,7 +138,7 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
 
     test_ids = dict()
     if test_file is not None:
-        seqdict.update({"#Test": ["", ""]})
+        seqString += "#Test" + "\n"
         for seq_record in SeqIO.parse(test_file, "fasta"):
             seq_id = seq_record.description
             seq_id = seq_id.split("-")
@@ -153,19 +153,15 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
                     seq_id = seq_id[0] + "_" + seq_id[1]
                     ##if seq_id not in network_ids:
                     test_ids.update({seq_id: [seq_record.description, seq_record.seq]})
-                    seqdict.update({seq_record.id: [seq_record.description, seq_record.seq]})
+                    seqString += ">" + str(seq_record.description) + "\n"
+                    seqString += str(seq_record.seq) + "\n"
     else:
         test_ids = None
     
     try:
         f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
         f_path = f.name
-        for element in seqdict:
-            desc, seq = seqdict[element]
-            if element == "#Network" or element == "#Test":
-                f.write(str(element) + "\n")
-            else:
-                f.write(">" + desc + "\n" + str(seq) + "\n")
+        f.write(seqString)
         f.close()
     
 
@@ -1012,7 +1008,7 @@ def main():
                         type=str, default=None)
     parser.add_argument("-c", "--cluster_script", help="path to synteny clustering R script",
                         type=str,
-                        default="./packages/Rscript/Synteny_Cluster_Script_sqlite.r")
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/packages/Rscript/Synteny_Cluster_Script_sqlite.r")
     parser.add_argument("-p", "--w_dir", help="working directory where temporary files are stored default is the "
                                               "current directory", type=str, default="")
     parser.add_argument("-n", "--network", help="if set to svg, 'outfile'_Network.svg is produced as an output."
@@ -1028,8 +1024,10 @@ def main():
                              "Default is False",type=bool, default=False)
     parser.add_argument("--use_sob_weights", help="If True uses sum of branch weights for Synteny Value calculation. "
                                                   "Default is False", type=bool, default=False)
-    parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str, default="../Syntney_DB/mySQLiteDB_new.db")
-    parser.add_argument("-s", "--sqlite_script", help="", type=str, default="./packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
+    parser.add_argument("-d", "--sqlite_db", help="Path to SQLite DB", type=str,
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/mySQLiteDB_Syntney.db")
+    parser.add_argument("-s", "--sqlite_script", help="", type=str,
+                        default=str(os.path.dirname(os.path.abspath(__file__))) + "/packages/GENBANK_GROPER_SQLITE/genbank_groper_sqliteDB.py")
     parser.add_argument("-r", "--page_rank", help="Turn PageRank algorithm on or off; default=on", type=str, default="on")
     parser.add_argument("-x", "--num_threads", help="Number of threads; default=1", type=int, default=1)
     args = parser.parse_args()
@@ -1108,7 +1106,7 @@ def main():
         # _Synteny_Table.txt - only used for internal testing
         aggregated_results += write_std_data(r_script_synteny_table, "synteny_table", outfile=args.outfiles + "_Synteny_Table.txt")
         if test_synteny_table is not None:
-            output_cluster_synteny_file(test_synteny_table, outfile=args.outfiles + "_Evaluated_Cluster.txt")
+            output_cluster_synteny_file(test_synteny_table, "test_synteny_table", outfile=args.outfiles + "_Evaluated_Cluster.txt")
         # _Network_Cluster.txt - only used for internal testing
         aggregated_results += output_cluster_synteny_file(network_synteny_table, "network_cluster", outfile=args.outfiles + "_Network_Cluster.txt")
     else:
