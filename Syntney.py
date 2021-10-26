@@ -43,18 +43,28 @@ def check_input_consistency(fasta_file, sqlite_handler):
     f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
     tmp_file = f.name
     count = 0
+    id_duplications_dict = dict()
+    id_duplications_out_str = ""
     try:
         # FASTA Format
-        with open(fasta_file, "rU") as handle:
+        with open(fasta_file, "r") as handle:
             for record in SeqIO.parse(handle, "fasta"):
                 new_header = check_NCBI_format(record.description)
                 f.write(">" + str(new_header) + "\n")
                 f.write(str(record.seq) + "\n")
                 count += 1
+                # check for duplications id + range
+                tmp_id_range = (new_header.split(" "))[0]
+                if tmp_id_range in id_duplications_dict:
+                    id_duplications_dict[tmp_id_range] += 1
+                    id_duplications_out_str += f'{new_header}\n'
+                else:
+                    id_duplications_dict[tmp_id_range] = 1
+
         # check if file format correspond to a 12 column blast output
         if count == 0:
             build_string = ""
-            with open(fasta_file, "rU") as handle:
+            with open(fasta_file, "r") as handle:
                 for line in handle:
                     line = line.rstrip()
                     tmp_arr = line.split("\t")
@@ -78,21 +88,32 @@ def check_input_consistency(fasta_file, sqlite_handler):
 
         # no supported file format can be detected
         if count == 0:
-            raise Exception()
-    except:
-        sys.stderr.write("ERROR => Input format does not contain the expected FASTA format (NCBI or RFAM style)." + "\n" + 
-                "Allowed formats are:" + "\n" +
-                "(a)" + "\n" +
-                "><ID>:<start coordinate>-<end coordinate> <some comments>" + "\n" +
-                "<Sequence>" + "\n" +
-                "if the sequence is encoded on the -strand:" + "\n" +
-                "><ID>:c<start coordinate>-<end coordinate> <some comments>" + "\n" +
-                "(b)" + "\n" +
-                "><ID>/<start coordinate>-<end coordinate> <some comments>" + "\n" +
-                "<Sequence>" + "\n" +
-                "(c)" + "\n" +
-                "12 column BLAST Table" + "\n"
-                )
+            raise Exception('data_format')
+
+        # if duplicates (Genome ID + Range) are in the dataset
+        if id_duplications_out_str != "":
+            #raise Exception(f'Error: There are duplicates in your input file:\n{id_duplications_out_str}')
+            raise Exception('duplicates')
+    except Exception as inst:
+        if inst.args[0] == "data_format":
+            sys.stderr.write("ERROR => Input format does not contain the expected FASTA format (NCBI or RFAM style)." + "\n" + 
+                    "Allowed formats are:" + "\n" +
+                    "(a)" + "\n" +
+                    "><ID>:<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                    "<Sequence>" + "\n" +
+                    "if the sequence is encoded on the -strand:" + "\n" +
+                    "><ID>:c<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                    "(b)" + "\n" +
+                    "><ID>/<start coordinate>-<end coordinate> <some comments>" + "\n" +
+                    "<Sequence>" + "\n" +
+                    "(c)" + "\n" +
+                    "12 column BLAST Table" + "\n"
+                    )
+        elif inst.args[0] == "duplicates":
+            sys.stderr.write(f'Error: There are duplicates in your input file for:\n{id_duplications_out_str}\n')
+        else:
+            sys.stderr.write("Generall error\n")
+        exit()
     return tmp_file
 
 
