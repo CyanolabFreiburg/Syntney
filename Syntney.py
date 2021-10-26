@@ -93,7 +93,6 @@ def check_input_consistency(fasta_file, sqlite_handler):
                 "(c)" + "\n" +
                 "12 column BLAST Table" + "\n"
                 )
-        exit()
     return tmp_file
 
 
@@ -208,7 +207,6 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
             list_name = "#missing_data"
         if master_table[i].startswith("#16S_RNA"):
             list_name = "#16S_RNA"
-
     return syntenyfile_cluster_table, syntenyfile_synteny_table, network_annotation_table, missing_ids_table, rRNA_network_table, network_ids, test_ids
 
 # produces a dictionary from the identifiers of sRNAs (ids). Identifiers must be like "Accessionnumber" + underscore +
@@ -393,13 +391,14 @@ def tree_construction(rRNA_data, n_threads):
                 else:
                     skip = False
         tmp_fasta.close()
-
+        
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
         os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --threads=" + str(n_threads)  + " --full --force > /dev/null")
 
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
+       
         os.system("quicktree -in m " + str(tmp_clustalo.name) + " > " + str(tmp_quicktree.name))
         # produces a ete3 object from the tree and removes the treefile and the tree FASTA
         f = open(tmp_quicktree.name, "r")
@@ -1067,7 +1066,7 @@ def main():
     network_synteny_table = add_cluster_to_synteny_table(network_synteny_table, cluster_dict, number_of_clusters)
     network = build_network(network_synteny_table)
     network, tree, tree_iddict = normalize_connections(r_rRNA_network_table, network, args.num_threads)
-
+    
     if args.node_normalization is True:
         normalize_nodes(tree, tree_iddict, network)
     
