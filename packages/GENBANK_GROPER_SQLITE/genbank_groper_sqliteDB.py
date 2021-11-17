@@ -626,7 +626,7 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc):
                     con.close()
                     os._exit()
                 print('EXITING FTP !!!!!!!!!!!')
-                sys.exit(0)
+                #sys.exit(0)
 
         else:
             # print('FTP link does not exists !!!! ')

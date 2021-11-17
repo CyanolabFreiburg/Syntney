@@ -110,7 +110,7 @@ def check_input_consistency(fasta_file, sqlite_handler):
                     "12 column BLAST Table" + "\n"
                     )
         elif inst.args[0] == "duplicates":
-            sys.stderr.write(f'Error: There are duplicates in your input file for:\n{id_duplications_out_str}\n')
+            sys.stderr.write(f'Error: There are duplicates in your input file \"{fasta_file}\" for:\n{id_duplications_out_str}\n')
         else:
             sys.stderr.write("Generall error\n")
         exit()
@@ -184,9 +184,8 @@ def run_r_script(network_file, test_file, r_script_path, sql_db_path, sql_script
         f.write(seqString)
         f.close()
     
-
         proc = subprocess.run(["R", "--slave", "-f " + r_script_path, "--args", "filename=" + f_path, "synteny_window=" + synteny_window, "script_path=" + sql_script_path, "db_path=" + sql_db_path, "threads=" + str(num_threads), "write_files=FALSE"], universal_newlines=True, stdout=subprocess.PIPE, check=True)
-       
+
     finally:
         # remove tmp file 
         os.unlink(f.name)
@@ -416,7 +415,7 @@ def tree_construction(rRNA_data, n_threads):
         # produces a distance matrix from the numbered FASTA via clustalo
         tmp_clustalo = tempfile.NamedTemporaryFile(delete=False)
         os.system("clustalo --in " + str(tmp_fasta.name) + " --distmat-out=" + str(tmp_clustalo.name) + " --threads=" + str(n_threads)  + " --full --force > /dev/null")
-
+        
         # uses quicktree to built a tree from the distance matrix and removes the distance matrix
         tmp_quicktree = tempfile.NamedTemporaryFile(delete=False)
        
@@ -1073,7 +1072,6 @@ def main():
     except:
         sys.exit("ERROR: R_SCRIPT CAN\'T BE CALLED CORRECTLY!")
 
-
     number_of_clusters = args.protein_number + 1  # needs to be done as sRNA is also considered as a cluster
         
     try:
@@ -1143,7 +1141,8 @@ def main():
 
     # delete psi_out
     path_psi_out = str(os.path.abspath(args.w_dir)) + "/psi_out/"
-    shutil.rmtree(path_psi_out)
+    if os.path.isdir(path_psi_out):
+        shutil.rmtree(path_psi_out)
 
 if __name__ == "__main__":
     main()

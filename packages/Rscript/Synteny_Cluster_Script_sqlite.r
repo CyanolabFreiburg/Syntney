@@ -222,8 +222,8 @@ get_prot_fasta3<-function(out, filen){
 cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, threads=2){
 	tempf<-tempfile()
 	wd<-getwd()
-	di<-paste(wd,"/", "psi_out",sep="")
-	dir.create(di)
+	#di<-paste(wd,"/", "psi_out",sep="")
+	#dir.create(di)
 	if(psi==T){
 		inp<-paste("./psi-cd-hit.pl -i ", fasta,  " -d 50 -o ", tempf, " -c ", thres, sep="")
 	 }
@@ -243,8 +243,8 @@ cdhit_run<-function(fasta="protein_fasta.txt", outname="psi", thres=0.3, psi=T, 
 cdhit_run_rna<-function(fasta="protein_fasta.txt", outname="psi", thres=0.75,  threads=2){
 	tempf<-tempfile()
 	wd<-getwd()
-	di<-paste(wd,"/", "psi_out",sep="")
-	dir.create(di)
+	#di<-paste(wd,"/", "psi_out",sep="")
+	#dir.create(di)
 	inp<-paste("cd-hit-est -i ", fasta,  " -d 50 -o ",tempf, " -c ",  thres ," -n 4", " -aL 0.6", " -T ", threads, sep="")
 	 system(inp, intern=T)
 	 cd<-paste(tempf, ".clstr", sep="")
