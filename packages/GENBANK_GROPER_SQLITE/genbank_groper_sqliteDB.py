@@ -22,7 +22,12 @@ import warnings
 from collections import defaultdict
 import signal
 import math
+#from urllib.error import HTTPError
 
+'''
+Here I change the way insertion is made to database.
+Also I introduce skip if the data already exist the database so no insertion required.
+'''
 
 information = """
 Usage:
@@ -160,7 +165,7 @@ def execute_barrbap(organism, dna_file, con):
                 os._exit(0)
         return barrnap_out
     except:
-        print('Ctrl C pressed, program safely exited !!!!!!!!! ###')
+        # print('Ctrl C pressed, program safely exited during barrnap !!!!!!!!! ###')
         if con:
             con.close()
         os._exit(0)
@@ -228,21 +233,27 @@ def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
     org_id = chr_ref.strip().split(".")[0]
     cursor.execute("SELECT genome_dna.[16sRNA_Ref], [16sRNA].acc FROM genome_dna, [16sRNA] WHERE genome_dna.[16sRNA_Ref] like ?1 AND [16sRNA].acc like ?1", (org_id + "._%",))
     data = cursor.fetchall()
+    # print('data', data)
     con.commit()
-    # print(data)
     # print(organism, refseq_id, dna_seq, chr_ref)
     # print(organism, consensus_seq)
 
 
     if len(data) == 0:
-        cursor.execute("""INSERT into [16sRNA](acc, [16sRNA_Seq])
-                    VALUES(?,?)""", (organism, consensus_seq))
-        con.commit()
+        try:
 
-    cursor.execute("""INSERT into genome_dna(acc, refseq, dna, [16sRNA_Ref])
+            cursor.execute("""INSERT into [16sRNA](acc, [16sRNA_Seq])
+                        VALUES(?,?)""", (organism, consensus_seq))
+            con.commit()
+        except:
+            pass
+
+    try:
+        cursor.execute("""INSERT into genome_dna(acc, refseq, dna, [16sRNA_Ref])
                 VALUES(?,?,?,?)""", (organism, refseq_id, dna_seq, chr_ref))
-    con.commit()
-    # print("Exiting insert_db !!!!")
+        con.commit()
+    except:
+        pass
 
 
 def consensus_sequence(dim, sequences, sequences_dict, keys):
@@ -343,7 +354,8 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
     is not in the db
     """
     # print("Insert_genbank function ##################")
-    # print(genbank)
+    # print("genbank, con, user_acc, chr_ref")
+    # print(genbank, con, user_acc, chr_ref)
     state = ""
     dna_seq = ""
     consensus_seq = ""
@@ -366,7 +378,7 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
                     data = cur.fetchall()
                     con.commit()
                     gb_record_desc = gb_record.description
-                    # print(gb_record_desc)
+                    # print(gb_record.id, ": ",  gb_record_desc)
                     # print(len(data))
                     if len(data) != 0:
                         state += str(gb_record.id) + " - exists!\n"
@@ -389,8 +401,23 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
                     # where we have version of gbk file and not in input ID.
                     if not '.' in user_acc:
                         gb_id = gb_id.strip().split('.')[0]
+                    
+                    if not args.rRNA:
+                        args.rRNA = []
+                        # print(id_container)
+                    if not args.accession:
+                        accesion_list = []
 
-                    if gb_id == user_acc or gb_id == chr_ref:
+                    if args.accession:
+                        accesion_list = []
+                        # print('\naccession parameter given !!!!!!!!!!!!!\n')
+                        for i in id_container:
+                            accesion_list.append(i[1])
+                        # print(accesion_list)
+                    # print("gb_id, user_acc, chr_ref, gb_record.id.strip(), args.rRNA :", gb_id, user_acc, chr_ref, gb_record.id.strip(), args.rRNA)
+
+                    if gb_id == user_acc or gb_id == chr_ref or gb_record.id.strip() in args.rRNA or gb_record.id.strip() in accesion_list:
+                        # print("data insertion starts for ", gb_record.id, tmp_path )
                         user_acc_flag = True
                         # get data from genbank and rearrange the structure
                         for entry in gb_record.features:
@@ -544,7 +571,7 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
                                     # remove the redundant/temp file
                                     # remove_file()
                                 except:
-                                    print('Ctrl C pressed, program safely exited !!!!!!')
+                                    # print('Ctrl C pressed, program safely exited during insertion !!!!!')
                                     os.system('rm ' + str(gb_record.id) + '*')
                                     if con:
                                         con.close()
@@ -556,18 +583,33 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
                                 chr_ref = "NA"
                                 insert_db(con, str(gb_record.id), dna_seq, consensus_seq, chr_ref)
                             rows_genome_dna.append([gb_record.id, dna_seq])
-                            try:
-                                cur.executemany("""INSERT INTO proteins (acc, gen_locus,
-                                                gene_name, start_pos, end_pos, orientation,
-                                                sequence) VALUES (?,?,?,?,?,?,?)""",
-                                                rows_proteins)
-                                con.commit()
-                            except con.IntegrityError:
-                                sys.stderr.write("ERROR: ID already exists in PRIMARY KEY\
-                                                column " + str(con.IntegrityError) + "\n")
-                                continue
+                            if len(rows_proteins) != 0:
+                                try:
+                                    # print('len(rows_proteins)', len(rows_proteins))
+                                    flattened_values = [x for tpl in rows_proteins for x in tpl]
+                                    base_stmt = """INSERT INTO proteins (acc, gen_locus, gene_name, start_pos, end_pos, orientation, sequence) VALUES """
+                                    # print(base_stmt)
+                                    values_clause = ', '.join(['(?, ?, ?, ?, ?, ?, ?)' for _ in range(len(flattened_values) // 7)])
+                                    stmt = base_stmt + values_clause
+                                    # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                                    # print('values_clause', values_clause)
+                                    # print(stmt)
+                                    # print()
+                                    # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                                    con.execute(stmt, flattened_values)
+                                    '''
+                                    cur.executemany("""INSERT INTO proteins (acc, gen_locus,
+                                                    gene_name, start_pos, end_pos, orientation,
+                                                    sequence) VALUES (?,?,?,?,?,?,?)""",
+                                                    rows_proteins)
+                                    '''
+                                    con.commit()
+                                except con.IntegrityError:
+                                    sys.stderr.write("ERROR: ID already exists in PRIMARY KEY\
+                                                    column " + str(con.IntegrityError) + "\n")
+                                    continue
                         except:
-                            print("len(str(gb_record.seq)) in exception:" , len(str(gb_record.seq)))
+                            print("len(str(gb_record.seq)) in exception:" , gb_record, len(str(gb_record.seq)))
                             print("something went wrong with extraction of data")
                             # ctrl c pressed
                             if con:
@@ -589,58 +631,102 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
     return user_acc
 
 def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc):
-    # print("!!!!!!!!! get_data_from_ncbi_1 function !!!!")
-    # print('user_acc: ', user_acc)
     ts = 'Temp_dir/' + user_acc
+    # print(ts)
     tmp_download_path = os.getcwd() + "/" + str(ts) + "_TMP"
     # print(ftp_lnk)
+    # print(tmp_download_path)
     # os.makedirs(tmp_download_path)
     try:
         if ftp_lnk:
             try:
                 # without creating dir, wget creates by iteself with -P parameter
                 # os.makedirs(tmp_download_path)
+                time.sleep(3)
                 ftp_cmd = "wget -c --retry-connrefused -nv --show-progress --continue --read-timeout=20 --tries=40 --wait=10 --timeout=15 " + str(ftp_lnk.strip()) + " -P " + str(tmp_download_path)
                 # print(ftp_cmd)
+                #try:
                 os.system("wget -c --retry-connrefused -nv --show-progress --continue\
-                        --read-timeout=20 --tries=40 --wait=10 --timeout=15 " +
+                        --read-timeout=20 --tries=40 --wait=10 --timeout=15 --secure-protocol=TLSv1 " +
                         str(ftp_lnk.strip()) + " -P " +
                         str(tmp_download_path))
-
+                #except:
+                #    print('ERROR in download')
                 file_path = str(tmp_download_path) + "/" + \
                                 str(ftp_lnk.split('/')[-1])
+                # print(os.path.getsize(file_path))
                 # uncompress downloaded *.gz file
-                inF = gzip.open(file_path, 'rb')
-                uncompressed_gb = str(tmp_download_path) + "/" + str(user_acc) + ".gbk"
-                outF = open(uncompressed_gb, 'wb')
-                outF.write(inF.read())
-                inF.close()
-                outF.close()
+                try:
+                    inF = gzip.open(file_path, 'rb')
+                    uncompressed_gb = str(tmp_download_path) + "/" + str(user_acc) + ".gbk"
+                    outF = open(uncompressed_gb, 'wb')
+                    outF.write(inF.read())
+                    inF.close()
+                    outF.close()
+                except:
+                    # print('\n\n Exception in zip file extraction !!!!\n\n')
+                    # print('inf', uncompressed_gb)
+                    if (os.stat(uncompressed_gb).st_size == 0):
+                        shutil.rmtree(tmp_download_path)
+                        time.sleep(5)
+                        os.system("wget -c --retry-connrefused -nv --show-progress --continue\
+                            --read-timeout=20 --tries=40 --wait=10 --timeout=15 --secure-protocol=TLSv1 " +
+                            str(ftp_lnk.strip()) + " -P " +
+                            str(tmp_download_path))
+                        file_path = str(tmp_download_path) + "/" + \
+                                    str(ftp_lnk.split('/')[-1])
+                        # uncompress downloaded *.gz file
+                        # print('\nBefore uncompressing AGAIN !!!!\n')
+                        try:
+                            inF = gzip.open(file_path, 'rb')
+                            uncompressed_gb = str(tmp_download_path) + "/" + str(user_acc) + ".gbk"
+                            outF = open(uncompressed_gb, 'wb')
+                            outF.write(inF.read())
+                            inF.close()
+                            outF.close()
+                            # if (os.path.getsize(inF) == 0):
+                        except:
+                            # print('\n\nSTILL ZERO !!!!!!!!!!!!!!!!!!\n\n')
+                            shutil.rmtree(tmp_download_path)
+                            with open('./Organisms_with_Errors.lst', 'w') as wr:
+                                wr.write(user_acc) 
+
+
+
+            except HTTPError as err:
+                pass
             except:
                 print('ERROR in download !!!!!!!!!!!!', tmp_download_path)
                 if os.path.isdir(tmp_download_path):
-                    # print('file not removed !!!!')
+                    print(' \nfile  removed when download with FTP !!!!\n')
                     os.system('rm -r ' + tmp_download_path)    
                 if con:
                     print('DB connection closed !!!!')
                     con.close()
-                    os._exit()
+                    #os._exit()
                 print('EXITING FTP !!!!!!!!!!!')
-                #sys.exit(0)
+                # sys.exit(0)
 
         else:
             # print('FTP link does not exists !!!! ')
+            # print('user_acc:', user_acc)
             # double quotes removed from link due to subprocess.run
             org_link = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=' + user_acc + '&rettype=gbwithparts&retmode=text'
             # output file name with location
+            # print()
+            # print(tmp_download_path)
             try:
                 os.makedirs(tmp_download_path)
                 os.system('ls ' + tmp_download_path)
+                # print()
+                # print(tmp_download_path)
+                
             except:
-                print(user_acc, ': directory exists !!!! ')
+                pass
+                # print(user_acc, ': directory exists !!!! ')
 
             download_path = str(tmp_download_path) + "/" + user_acc + ".gbk"
-            cmd_wget = ['wget', '-c', '--retry-connrefused', '--waitretry=6', '--retry-on-http-error=429', '-nv', '--show-progress', '--continue', '--read-timeout=20', '--tries=40', '--wait=10', '--timeout=15', str(org_link),     '-O', str(download_path)]
+            cmd_wget = ['wget', '-c', '--retry-connrefused', '--waitretry=6', '--retry-on-http-error=429', '-nv', '--show-progress', '--continue', '--read-timeout=20', '--tries=40', '--wait=10', '--timeout=15', '--secure-protocol=TLSv1' , str(org_link),     '-O', str(download_path)]
             # cmd_wget = ['curl ']
             if os.path.exists(download_path):
                 last_line = os.popen('tail -n 2 ' + download_path).read()
@@ -652,19 +738,19 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc):
                     subprocess.call(cmd_wget)
             else:
                 try:
-                    print()
+                    # print()
                     p = subprocess.run(cmd_wget, check=True)
                     # subprocess.call(cmd_wget)
                 except:
                     print('ERROR in eutils download !!!!!!!!!!!!', tmp_download_path)
                     p.send_signal(signal.SIGINT)
                     if os.path.isdir(tmp_download_path):
-                        # print('file removed !!!!')
+                        print('\nfile removed when efetch used !!!!\n')
                         os.system('rm -r ' + tmp_download_path)    
                     if con:
                         # print('DB connection closed !!!!')
                         con.close()
-                    os._exit(0)        
+                    #os._exit(0)        
     except:
         # print('Termination get_data_from_ncbi_1 END !!!!')
         # if os.path.isdir(tmp_download_path):
@@ -674,7 +760,7 @@ def get_data_from_ncbi(ftp_lnk, chr_ref, user_acc):
         if con:
             con.close()
         os._exit(0)
-
+    
 
 def process_NCBI_lookup(in_file, directory, out_file):
     result = list()
@@ -831,6 +917,10 @@ def download_organisms(input_param):
 
     try:
         organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
+        # print('\nFAYYAZ !!!!!!!!!!!!!!!1\n')
+        # print(organism_col)
+        organism_col = input_param
+        # print(organism_col)
         if ftp_lnk:
             chr_ref_dict[organism_col] = chr_ref
             get_data_from_ncbi(ftp_lnk, chr_ref, organism_col)
@@ -841,10 +931,9 @@ def download_organisms(input_param):
             chr_ref = 'NA'
             chr_ref_dict[organism_col] = chr_ref
             get_data_from_ncbi(ftp_lnk, chr_ref, organism_col)
-            # print('after exit !!!!')
             
     except:
-        print(' In except state')
+        # print(' In except state')
         if con:
             con.close()
             sys.exit()
@@ -876,7 +965,7 @@ def data_check_in_db(args_rRNA):
         con.close()
 
     except:
-        print("\nctrl c pressed !!!!!\n")
+        # print("\nctrl c pressed !!!!!\n")
         print("find_rRNA_gene safely exited !!!!!!")
         # os.system("rm -rf *.fai barrnap.* ./Temp_dir")
         if con:
@@ -887,6 +976,9 @@ def data_check_in_db(args_rRNA):
 
 
 def data_insertion_after_download(db_path):
+    # print()
+    # print('BEFORE DATA INSERTION AFTER DOWNLOAD !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    # print()
     dir_list = os.listdir('./Temp_dir')
     con = lite.connect(db_path)
     con.execute("PRAGMA journal_mode=WAL")
@@ -906,27 +998,15 @@ def data_insertion_after_download(db_path):
 def find_rRNA_gene(args_rRNA):
     db_path = args.sqlite
     download_orgs = data_check_in_db(args_rRNA)
+    #print('FAYYAZ !!!!!!!!!!!!!!!!!!')
 
     no_of_orgs = args.norgs
     range_list = math.ceil(len(download_orgs) / no_of_orgs)
     orgs_list = []
     k = 0
 
-    for i in range(range_list):
-        orgs_list.append(download_orgs[k:k + no_of_orgs])
-        k = k + no_of_orgs
-
-    try:
-        for lst in orgs_list:
-            # print(lst)
-            with Pool(args.cores) as p:
-                p.map(download_organisms, lst)
-            data_insertion_after_download(db_path)
-    except:
-        print('download interupted in pool !!!!')
-        os._exit(0)
-
     for input_param in download_orgs:
+        #print(input_param, download_orgs)
         organism_col, ftp_lnk, organism_arr, chr_ref = chrom_plas(input_param)
         if ftp_lnk:
             # print(organism_col, ftp_lnk, organism_arr, chr_ref)
@@ -935,6 +1015,24 @@ def find_rRNA_gene(args_rRNA):
             chr_ref = 'NA'
             chr_ref_dict[input_param] = chr_ref
 
+    
+    for i in range(range_list):
+        orgs_list.append(download_orgs[k:k + no_of_orgs])
+        k = k + no_of_orgs
+        #print(orgs_list)
+
+    try:
+        for lst in orgs_list:
+            # print(lst)
+            with Pool(args.cores) as p:
+                p.map(download_organisms, lst)
+            # print('BEFORE INSERTION AFTER DOWNLOAD !!!!!')
+            data_insertion_after_download(db_path)
+    except:
+        print('download interupted in pool !!!!')
+        os._exit(0)
+
+    
     con = lite.connect(db_path)
     con.execute("PRAGMA journal_mode=WAL")
     with con:
@@ -963,12 +1061,15 @@ def find_rRNA_gene(args_rRNA):
 
 def find_accession(id_container ):
     db_path = args.sqlite
-    accesion_list = []
-    # print(id_container)
+    accesion_l = []
+    accesion_list = set()
+    #print(id_container)
+
 
     for i in id_container:
-        accesion_list.append(i[1])
-
+        accesion_l.append(i[1])
+    
+    accesion_list = set(accesion_l)
     download_orgs = data_check_in_db(accesion_list)
 
     no_of_orgs = args.norgs
@@ -1046,7 +1147,7 @@ def find_accession(id_container ):
                     print(input_param + ' not found in databse !!! ')
                     
     except KeyboardInterrupt:
-        print("\nctrl c pressed !!!!!\n")
+        # print("\nctrl c pressed !!!!!\n")
         print("program safely exited !!!!!!")
         if con:
             con.close()
@@ -1067,11 +1168,13 @@ def find_accession(id_container ):
 def dna_extraction(args_extDNA, args_sqlite, ncbi_file_path):
 
     db_path = args.sqlite
-    accesion_list = []
+    accesion_l = []
+    accesion_list = set()
 
     for i in args_extDNA:
-        accesion_list.append(i.split('@')[0])
+        accesion_l.append(i.split('@')[0])
     # print(accesion_list)
+    accesion_list = set(accesion_l)
     download_orgs = data_check_in_db(accesion_list)
 
     no_of_orgs = args.norgs
@@ -1177,7 +1280,7 @@ if __name__ == "__main__":
                         at once; default: 40", type=int, default=40)
     parser.add_argument("-cr", "--cores", help="No of cores\
                         to be used for downalod \
-                        at once; default: 3", type=int, default=3)
+                        at once; default: 3", type=int, default=20)
 
     args = parser.parse_args()
 
@@ -1194,7 +1297,7 @@ if __name__ == "__main__":
     gbk_file = args.genbank
     if gbk_file:
         if os.path.exists(gbk_file):
-            print("genbank input provided !!!!")
+            # print("genbank input provided !!!!")
             # start pickle of data
             con = lite.connect(args.sqlite)
             con.execute("PRAGMA journal_mode=WAL")
@@ -1240,13 +1343,13 @@ if __name__ == "__main__":
             else:
                 file_path = prok_file
             process_NCBI_lookup(file_path, ncbi_folder_name, ncbi_master_table)
-            print()
+            # print()
     else:
         os.mkdir(ncbi_folder_name)
         # get data and reprocess the file
         file_path = wget.download(genbank_summary_url, out=ncbi_folder_name)
         process_NCBI_lookup(file_path, ncbi_folder_name, ncbi_master_table)
-        print()
+        # print()
 
     input_param = ""
     
@@ -1255,6 +1358,7 @@ if __name__ == "__main__":
         input_param = (args.accession).strip()
         # checks input is a string or file
         if os.path.isfile(args.accession):
+            #os.system('cat ' + args.accession)
             handle = open(args.accession)
             for line in handle:
                 line = line.rstrip()
