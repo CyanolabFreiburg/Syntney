@@ -222,7 +222,8 @@ def sumColumn(dim, matrix_nd, column):
 def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
     """Insert record into SqliteDB"""
 
-    # print("insert_db function !!!!")
+   #  print("insert_db function !!!!")
+   #  print(datetime.now())
     
     refseq_id = ""
     if "NC_" in organism or "NZ_" in organism:
@@ -231,14 +232,16 @@ def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
         refseq_id = find_refseq(ncbi_file_path, organism)
     cursor = con.cursor()
     org_id = chr_ref.strip().split(".")[0]
-    cursor.execute("SELECT genome_dna.[16sRNA_Ref], [16sRNA].acc FROM genome_dna, [16sRNA] WHERE genome_dna.[16sRNA_Ref] like ?1 AND [16sRNA].acc like ?1", (org_id + "._%",))
-    data = cursor.fetchall()
-    # print('data', data)
-    con.commit()
+    data = []
+    # cursor.execute("SELECT genome_dna.[16sRNA_Ref], [16sRNA].acc FROM genome_dna, [16sRNA] WHERE genome_dna.[16sRNA_Ref] like ?1 AND [16sRNA].acc like ?1", (org_id + "._%",))
+    # data = cursor.fetchall()
+    # # print('data', data)
+    # con.commit()
+    # print(datetime.now())
     # print(organism, refseq_id, dna_seq, chr_ref)
     # print(organism, consensus_seq)
-
-
+    
+    
     if len(data) == 0:
         try:
 
@@ -247,14 +250,14 @@ def insert_db(con, organism, dna_seq, consensus_seq, chr_ref):
             con.commit()
         except:
             pass
-
+    
     try:
         cursor.execute("""INSERT into genome_dna(acc, refseq, dna, [16sRNA_Ref])
                 VALUES(?,?,?,?)""", (organism, refseq_id, dna_seq, chr_ref))
         con.commit()
     except:
         pass
-
+    
 
 def consensus_sequence(dim, sequences, sequences_dict, keys):
     # an emtpy matrix created
@@ -356,6 +359,7 @@ def insert_genbank(genbank, con, user_acc, chr_ref):
     # print("Insert_genbank function ##################")
     # print("genbank, con, user_acc, chr_ref")
     # print(genbank, con, user_acc, chr_ref)
+    # print(datetime.now())
     state = ""
     dna_seq = ""
     consensus_seq = ""
@@ -823,8 +827,9 @@ def find_refseq(ncbi_file_path, input_param):
         line = line.rstrip()
         line_arr = line.split("\t")
         line_chr = re.split(',', line_arr[0])
+        # print(line_chr)
         for i, val in enumerate(line_chr):
-            if input_param in val:
+            if input_param.split('.')[0] in val.split('.')[0]:
                 # taking 1st id as chr_ref bcz all of them has same 16sRNA seq
                 if "/" in val:
                     refseq = re.split('/',val)[0]
@@ -1280,7 +1285,7 @@ if __name__ == "__main__":
                         at once; default: 40", type=int, default=40)
     parser.add_argument("-cr", "--cores", help="No of cores\
                         to be used for downalod \
-                        at once; default: 3", type=int, default=20)
+                        at once; default: 20", type=int, default=20)
 
     args = parser.parse_args()
 
