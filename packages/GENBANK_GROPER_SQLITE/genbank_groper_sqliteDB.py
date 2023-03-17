@@ -829,7 +829,8 @@ def find_refseq(ncbi_file_path, input_param):
         line_chr = re.split(',', line_arr[0])
         # print(line_chr)
         for i, val in enumerate(line_chr):
-            if input_param.split('.')[0] in val.split('.')[0]:
+            if input_param.split('.')[0] in val:
+            # if input_param.split('.')[0] in val.split('.')[0]:
                 # taking 1st id as chr_ref bcz all of them has same 16sRNA seq
                 if "/" in val:
                     refseq = re.split('/',val)[0]
@@ -1006,7 +1007,7 @@ def find_rRNA_gene(args_rRNA):
     #print('FAYYAZ !!!!!!!!!!!!!!!!!!')
 
     no_of_orgs = args.norgs
-    range_list = math.ceil(len(download_orgs) / no_of_orgs)
+    range_list = math.ceil(len(download_orgs) / float(no_of_orgs))
     orgs_list = []
     k = 0
 
