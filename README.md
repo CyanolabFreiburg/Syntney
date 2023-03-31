@@ -83,14 +83,16 @@ conda activate Syntney
 		- will be removed in further version and replaced by the number of -
 		- 		up and downstream proteins that is extracted	-		
 --node_normalization
-		uses a teleport from the sRNA node that depends on a normalized number 
-		of occurrences of the clusters instead of a random teleport if set to True. 
+		does a phyologentic sum of branch (sob) normalization of the node counts. Also triggers
+		the use of teleports from the sRNA node that depends on a normalized number 
+		of occurrences of the clusters instead of a random teleport for PageRank True. 
 		Default is False
 --protein_number 
                 If True uses a teleport at the sRNA based on a normalized number of cluster occurrences. 
                 Default is False
 --use_sob_weights 
-                If True uses sum of branch weights for Synteny Value calculation.
+                If True uses sum of branch normalization for edge weights and the 
+		synteny value calculation by PageRak.
                 Default is False
 ```
 	
